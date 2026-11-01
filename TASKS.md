@@ -42,17 +42,17 @@
 
 ### Project setup
 - [ ] **P1-01** — สร้าง `KAI.xcodeproj` (macOS 14+, Swift 6, SwiftUI app lifecycle)
-- [ ] **P1-02** — สร้าง local Swift packages: `KAICore`, `KAITracking`, `KAIGesture`, `KAIActions`, `KAIContext`, `KAIVoice`, `KAIAgent`, `KAIMCP`
+- [ ] **P1-02** — สร้าง local Swift packages: `KAICore`, `KAITracking`, `KAIGesture`, `KAIActions`, `KAIContext`, `KAIVoice`, `KAIAgent`, `KAIMCP` _ทำแล้วเฉพาะ `KAICore` (Packages/KAICore); ที่เหลือสร้างเมื่อมีโค้ดจริง_
   - Done when: app target link ได้ทุก package, แต่ละ package มี test target
 - [ ] **P1-03** — ปิด App Sandbox, ตั้ง Hardened Runtime, entitlements (camera, microphone, apple-events)
 - [ ] **P1-04** — `.gitignore`, SwiftLint / swift-format config
 - [ ] **P1-05** — CI (GitHub Actions): build + `swift test` ทุก package
 
 ### Core
-- [ ] **P1-06** — `KAIEvent` enum + `EventStream` (typed `AsyncStream`, multi-subscriber)
-- [ ] **P1-07** — Configuration: โหลด/บันทึก JSON ใน `~/Library/Application Support/KAI/`, มี schema version + migration
-- [ ] **P1-08** — Logging ด้วย `OSLog` แยก category ต่อ subsystem
-- [ ] **P1-09** — Permission model: ตรวจสถานะ Accessibility, Camera, Microphone, Screen Recording, Automation
+- [x] **P1-06** — `KAIEvent` enum + `EventStream` (typed `AsyncStream`, multi-subscriber)
+- [x] **P1-07** — Configuration: โหลด/บันทึก JSON ใน `~/Library/Application Support/KAI/`, มี schema version + migration
+- [x] **P1-08** — Logging ด้วย `OSLog` แยก category ต่อ subsystem
+- [x] **P1-09** — Permission model: ตรวจสถานะ Accessibility, Camera, Microphone, Screen Recording, Automation
 
 ### App shell
 - [ ] **P1-10** — Menu bar app (`MenuBarExtra`), ไม่มี Dock icon (`LSUIElement`)
