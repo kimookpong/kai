@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import Foundation
 
@@ -113,10 +114,11 @@ tracker.onSample = { sample, visionSeconds in
     }
 }
 
-func finish() {
+func finish(extra: String? = nil) {
     tracker.stop()
     if pinched { cursor.mouseUp() }
     print("\n" + metrics.report())
+    if let extra { print(extra) }
     if config.stillTest {
         print("--- JITTER (hand held still, \(stillRaw.count) samples) ---")
         func line(_ name: String, _ pts: [CGPoint]) {
@@ -153,4 +155,12 @@ tick.setEventHandler {
 }
 tick.resume()
 
-dispatchMain()
+if config.clickTest {
+    guard !config.dryRun else { print("--click-test needs live events; drop --dry-run"); exit(1) }
+    _ = NSApplication.shared
+    let test = ClickTest { report in finish(extra: report) }
+    DispatchQueue.main.async { test.start() }
+    NSApp.run()
+} else {
+    dispatchMain()
+}

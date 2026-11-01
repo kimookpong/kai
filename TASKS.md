@@ -24,7 +24,7 @@
 - [x] **P0-06** — Implement One Euro Filter + ทดลองปรับ `minCutoff`, `beta`
 - [ ] **P0-07** — ทดลอง Absolute vs Relative mapping _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
 - [ ] **P0-08** — Pinch detection (ระยะ thumb tip ↔ index tip, normalize ด้วยขนาดมือ) + freeze cursor ตอนเริ่ม pinch _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
-- [ ] **P0-09** — เครื่องมือวัดผล _มี latency / fps / CPU / jitter; ยังไม่มี click-target test_
+- [ ] **P0-09** — เครื่องมือวัดผล _มี latency / fps / CPU / jitter / click-target test (`--click-test`) — รอรันบนเครื่องจริง_
   - Latency: timestamp เฟรม → timestamp CGEvent
   - Jitter: std dev ของตำแหน่ง cursor ตอนมือนิ่ง 5 วินาที
   - CPU % / fps

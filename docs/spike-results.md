@@ -16,6 +16,7 @@ B=$(swift build --show-bin-path)/KAISpike
 | Filter (ไม่ใช้กล้อง) | `$B --selftest` |
 | Latency / fps / CPU (ไม่ขยับ cursor) | `$B --dry-run --duration 20` |
 | Jitter ตอนมือนิ่ง | `$B --dry-run --still-test --anchor mcp` |
+| Click accuracy (เกณฑ์ Go / No-go) | `$B --click-test --anchor mcp` — 30 เป้า (24/44/64 pt) กด Esc เพื่อหยุด |
 | ใช้งานจริง | `$B --anchor mcp --mode absolute` |
 | เทียบ anchor | `--anchor tip`, `--anchor mcp`, `--anchor palm` |
 | เทียบ mapping | `--mode absolute`, `--mode relative` |
@@ -29,12 +30,12 @@ Pinch = จีบนิ้วโป้ง+ชี้ (ratio ของระยะ
 
 ## ตารางผลบนเครื่องจริง (ต้องกรอก)
 
-| Anchor | Mode | Latency p50/p95 (ms) | Jitter σ raw → filtered (px) | CPU % | fps | Pinch ผิดพลาด |
-| --- | --- | --- | --- | --- | --- | --- |
-| tip | absolute | | | | | |
-| mcp | absolute | | | | | |
-| palm | absolute | | | | | |
-| mcp | relative | | | | | |
+| Anchor | Mode | Latency p50/p95 (ms) | Jitter σ raw → filtered (px) | CPU % | fps | Hit 24pt | Hit 44pt | Hit 64pt |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| tip | absolute | | | | | | | |
+| mcp | absolute | | | | | | | |
+| palm | absolute | | | | | | | |
+| mcp | relative | | | | | | | |
 
 สภาพแวดล้อม: แสง (กลางวัน / ไฟห้อง / น้อย) · ระยะ (40 / 60 / 90 cm) · กล้อง (built-in / ภายนอก / Continuity)
 

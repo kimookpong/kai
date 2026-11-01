@@ -12,6 +12,7 @@ struct Config {
     var beta = 0.05
     var stillTest = false
     var selfTest = false
+    var clickTest = false
     /// Active region of the camera frame mapped to the full screen (normalized, mirrored).
     var regionLo = 0.2
     var regionHi = 0.8
@@ -34,6 +35,7 @@ struct Config {
             case "--beta": if let v = next(), let d = Double(v) { c.beta = d }
             case "--still-test": c.stillTest = true
             case "--selftest": c.selfTest = true
+            case "--click-test": c.clickTest = true
             case "--help", "-h": printUsage(); exit(0)
             default: FileHandle.standardError.write(Data("unknown arg: \(args[i])\n".utf8))
             }
@@ -51,6 +53,7 @@ struct Config {
           --dry-run                  track and measure, do not post mouse events
           --duration <sec>           stop after N seconds and print report
           --still-test               hold hand still: measure jitter (3s wait, 5s capture)
+          --click-test               full-screen target test: 30 trials at 24/44/64 pt (needs live events)
           --selftest                 verify One Euro filter on synthetic noise (no camera)
           --min-cutoff <hz>          One Euro min cutoff (default 1.0)
           --beta <v>                 One Euro beta (default 0.05)
