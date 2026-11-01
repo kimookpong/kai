@@ -1,0 +1,52 @@
+name: KAI
+options:
+  bundleIdPrefix: ai.kai
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    ENABLE_HARDENED_RUNTIME: YES
+    # Local builds are ad-hoc signed. Replace with a Developer ID identity for distribution (X-05).
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+packages:
+  KAICore:
+    path: Packages/KAICore
+targets:
+  KAI:
+    type: application
+    platform: macOS
+    sources: [KAI]
+    dependencies:
+      - package: KAICore
+    entitlements:
+      path: KAI/KAI.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.device.camera: true
+        com.apple.security.device.audio-input: true
+        com.apple.security.automation.apple-events: true
+    info:
+      path: KAI/Info.plist
+      properties:
+        CFBundleName: KAI
+        CFBundleDisplayName: KAI
+        LSUIElement: true
+        LSMinimumSystemVersion: "14.0"
+        NSCameraUsageDescription: KAI tracks your hand with the camera so you can control your Mac by gesture. Frames are processed on this Mac and never saved.
+        NSMicrophoneUsageDescription: KAI listens for voice commands while you hold the talk key.
+        NSAppleEventsUsageDescription: KAI controls other apps such as Finder and Music on your behalf.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.kai.app
+        GENERATE_INFOPLIST_FILE: NO
+schemes:
+  KAI:
+    build:
+      targets:
+        KAI: all
+    run:
+      config: Debug

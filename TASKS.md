@@ -41,10 +41,10 @@
 ## Phase 1 — Foundation
 
 ### Project setup
-- [ ] **P1-01** — สร้าง `KAI.xcodeproj` (macOS 14+, Swift 6, SwiftUI app lifecycle)
+- [x] **P1-01** — สร้าง `KAI.xcodeproj` (macOS 14+, Swift 6, SwiftUI app lifecycle)
 - [ ] **P1-02** — สร้าง local Swift packages: `KAICore`, `KAITracking`, `KAIGesture`, `KAIActions`, `KAIContext`, `KAIVoice`, `KAIAgent`, `KAIMCP` _ทำแล้วเฉพาะ `KAICore` (Packages/KAICore); ที่เหลือสร้างเมื่อมีโค้ดจริง_
   - Done when: app target link ได้ทุก package, แต่ละ package มี test target
-- [ ] **P1-03** — ปิด App Sandbox, ตั้ง Hardened Runtime, entitlements (camera, microphone, apple-events)
+- [x] **P1-03** — ปิด App Sandbox, ตั้ง Hardened Runtime, entitlements (camera, microphone, apple-events)
 - [ ] **P1-04** — `.gitignore`, SwiftLint / swift-format config
 - [ ] **P1-05** — CI (GitHub Actions): build + `swift test` ทุก package
 
@@ -55,12 +55,12 @@
 - [x] **P1-09** — Permission model: ตรวจสถานะ Accessibility, Camera, Microphone, Screen Recording, Automation
 
 ### App shell
-- [ ] **P1-10** — Menu bar app (`MenuBarExtra`), ไม่มี Dock icon (`LSUIElement`)
-- [ ] **P1-11** — Menu: สถานะ, mode, กล้องที่ใช้, AI status, Settings, Quit
-- [ ] **P1-12** — Settings window (tabs: General, Gestures, Voice, AI, Permissions, Privacy)
-- [ ] **P1-13** — Onboarding: ขอ permission ทีละตัว พร้อมคำอธิบายว่าใช้ทำอะไร + ปุ่มเปิด System Settings
+- [x] **P1-10** — Menu bar app (`MenuBarExtra`), ไม่มี Dock icon (`LSUIElement`)
+- [ ] **P1-11** — Menu: สถานะ, mode, กล้องที่ใช้, AI status, Settings, Quit _มีสถานะ + จำนวน permission ที่ขาด + Settings + Quit; ยังไม่มี mode / กล้อง / AI status_
+- [ ] **P1-12** — Settings window (tabs: General, Gestures, Voice, AI, Permissions, Privacy) _มี General / Permissions / Privacy; แท็บ Gestures / Voice / AI เพิ่มเมื่อมีฟีเจอร์_
+- [ ] **P1-13** — Onboarding: ขอ permission ทีละตัว พร้อมคำอธิบายว่าใช้ทำอะไร + ปุ่มเปิด System Settings _มีหน้า Permissions พร้อมเหตุผลและปุ่ม Allow / Open System Settings; ยังไม่มี flow onboarding ครั้งแรก_
 - [ ] **P1-14** — Global hotkey (เปิด/ปิด KAI, push-to-talk)
-- [ ] **P1-15** — Launch at login (`SMAppService`)
+- [x] **P1-15** — Launch at login (`SMAppService`)
 
 **🚦 Phase Gate P1:** แอปรันเป็น menu bar, onboarding ครบ, CI เขียว
 

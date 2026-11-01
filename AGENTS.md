@@ -37,8 +37,8 @@
 ## 3. Repository Layout
 
 ```text
-KAI.xcodeproj               App target: menu bar, UI, onboarding
-KAI/                        App sources (SwiftUI views, AppDelegate)
+project.yml                 XcodeGen spec -> KAI.xcodeproj (generated, gitignored)
+KAI/                        App target: menu bar, UI, onboarding
 Packages/
 ├── KAICore                 Events, Config, Logging, Permissions model
 ├── KAITracking             HandTrackingProvider + implementations
@@ -69,6 +69,11 @@ App → KAIAgent / KAIVoice / KAIGesture / KAIMCP → KAIActions / KAIContext / 
 ```bash
 # test ทุก package
 for p in Packages/*; do swift test --package-path "$p" || exit 1; done
+```
+
+```bash
+# generate KAI.xcodeproj from project.yml (needs: brew install xcodegen; the .xcodeproj is not committed)
+xcodegen generate
 ```
 
 ```bash
