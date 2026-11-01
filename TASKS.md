@@ -9,22 +9,22 @@
 
 ## Phase 0 — Feasibility Spike
 
-- [ ] **P0-01** — สร้าง Swift command-line / minimal app สำหรับ spike (แยกจากโปรเจกต์หลัก, ทิ้งได้)
-- [ ] **P0-02** — Capture กล้องด้วย AVFoundation ที่ 30 และ 60 fps (ถ้ากล้องรองรับ)
+- [x] **P0-01** — สร้าง Swift command-line / minimal app สำหรับ spike (แยกจากโปรเจกต์หลัก, ทิ้งได้)
+- [ ] **P0-02** — Capture กล้องด้วย AVFoundation ที่ 30 และ 60 fps (ถ้ากล้องรองรับ) _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
   - Done when: แสดง preview + วัด fps จริงได้
-- [ ] **P0-03** — Hand landmarks ด้วย Apple Vision (`VNDetectHumanHandPoseRequest`)
+- [ ] **P0-03** — Hand landmarks ด้วย Apple Vision (`VNDetectHumanHandPoseRequest`) _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
   - Done when: วาด 21 จุดบน preview ได้, log confidence ต่อจุด
   - deps: P0-02
 - [ ] **P0-04** — Hand landmarks ด้วย MediaPipe (Hand Landmarker)
   - Done when: วาด 21 จุด + ค่า z ได้
   - deps: P0-02
-- [ ] **P0-05** — ขยับ cursor ด้วย `CGEvent` จาก landmark
+- [ ] **P0-05** — ขยับ cursor ด้วย `CGEvent` จาก landmark _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
   - ทดลอง anchor 3 แบบ: ปลายนิ้วชี้ / โคนนิ้วชี้ (MCP) / กลางฝ่ามือ
   - deps: P0-03
-- [ ] **P0-06** — Implement One Euro Filter + ทดลองปรับ `minCutoff`, `beta`
-- [ ] **P0-07** — ทดลอง Absolute vs Relative mapping
-- [ ] **P0-08** — Pinch detection (ระยะ thumb tip ↔ index tip, normalize ด้วยขนาดมือ) + freeze cursor ตอนเริ่ม pinch
-- [ ] **P0-09** — เครื่องมือวัดผล
+- [x] **P0-06** — Implement One Euro Filter + ทดลองปรับ `minCutoff`, `beta`
+- [ ] **P0-07** — ทดลอง Absolute vs Relative mapping _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
+- [ ] **P0-08** — Pinch detection (ระยะ thumb tip ↔ index tip, normalize ด้วยขนาดมือ) + freeze cursor ตอนเริ่ม pinch _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
+- [ ] **P0-09** — เครื่องมือวัดผล _มี latency / fps / CPU / jitter; ยังไม่มี click-target test_
   - Latency: timestamp เฟรม → timestamp CGEvent
   - Jitter: std dev ของตำแหน่ง cursor ตอนมือนิ่ง 5 วินาที
   - CPU % / fps

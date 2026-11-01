@@ -1,0 +1,156 @@
+import AVFoundation
+import Foundation
+
+let config = Config.parse(CommandLine.arguments)
+let metrics = Metrics()
+let cursor = CursorController(dryRun: config.dryRun)
+let tracker = HandTracker(anchor: config.anchor)
+let filterX = OneEuroFilter(minCutoff: config.minCutoff, beta: config.beta)
+let filterY = OneEuroFilter(minCutoff: config.minCutoff, beta: config.beta)
+
+if config.selfTest {
+    // Hand held still with 3px of noise, then a fast 600px/s sweep. 30 fps.
+    var g = SystemRandomNumberGenerator()
+    let fx = OneEuroFilter(minCutoff: config.minCutoff, beta: config.beta)
+    var rawErr: [Double] = [], filtErr: [Double] = [], lag = 0.0
+    for i in 0..<300 {
+        let t = Double(i) / 30
+        let truth = i < 150 ? 500.0 : 500.0 + 600 * (t - 5)
+        let noisy = truth + Double.random(in: -3...3, using: &g)
+        let out = fx.filter(noisy, at: t)
+        if i >= 30 && i < 150 { rawErr.append(noisy - truth); filtErr.append(out - truth) }
+        if i == 299 { lag = truth - out }
+    }
+    func rms(_ v: [Double]) -> Double { (v.map { $0 * $0 }.reduce(0, +) / Double(v.count)).squareRoot() }
+    print(String(format: "still: raw rms %.2f px → filtered rms %.2f px", rms(rawErr), rms(filtErr)))
+    print(String(format: "sweep 600 px/s: steady-state lag %.1f px", lag))
+    exit(0)
+}
+
+print("anchor=\(config.anchor.rawValue) mode=\(config.mode.rawValue) dryRun=\(config.dryRun) minCutoff=\(config.minCutoff) beta=\(config.beta)")
+if !config.dryRun && !CursorController.checkAccessibility() {
+    print("⚠️  Accessibility permission missing for this process — mouse events will be ignored.")
+    print("   System Settings → Privacy & Security → Accessibility → enable your terminal app.")
+}
+
+// MARK: pipeline state (touched only on the camera queue)
+var pinched = false
+var freezeUntil = 0.0
+var frozenAt = CGPoint.zero
+var lastNorm: CGPoint?
+var history: [(t: Double, p: CGPoint)] = []
+
+// Jitter capture
+var stillStart: Double?
+var stillRaw: [CGPoint] = []
+var stillFiltered: [CGPoint] = []
+let stillWait = 3.0, stillLen = 5.0
+let wallStart = CFAbsoluteTimeGetCurrent()
+
+func lerpToScreen(_ n: CGPoint) -> CGPoint {
+    let span = config.regionHi - config.regionLo
+    let nx = min(max((n.x - config.regionLo) / span, 0), 1)
+    let ny = min(max((n.y - config.regionLo) / span, 0), 1)
+    let s = cursor.screenSize
+    return CGPoint(x: nx * s.width, y: (1 - ny) * s.height)
+}
+
+func std(_ v: [Double]) -> Double {
+    guard v.count > 1 else { return .nan }
+    let m = v.reduce(0, +) / Double(v.count)
+    return (v.map { ($0 - m) * ($0 - m) }.reduce(0, +) / Double(v.count - 1)).squareRoot()
+}
+
+tracker.onSample = { sample, visionSeconds in
+    metrics.recordFrame(hand: sample != nil, visionSeconds: visionSeconds, confidence: sample?.confidence)
+    guard let s = sample else {
+        if pinched { cursor.mouseUp(); pinched = false }
+        filterX.reset(); filterY.reset(); lastNorm = nil
+        return
+    }
+    let t = s.captureTime
+    let nx = filterX.filter(s.anchor.x, at: t)
+    let ny = filterY.filter(s.anchor.y, at: t)
+    let norm = CGPoint(x: nx, y: ny)
+
+    var target: CGPoint
+    switch config.mode {
+    case .absolute:
+        target = lerpToScreen(norm)
+    case .relative:
+        defer { lastNorm = norm }
+        guard let prev = lastNorm else { return }
+        target = CGPoint(x: cursor.position.x + (norm.x - prev.x) * config.relativeGain,
+                         y: cursor.position.y - (norm.y - prev.y) * config.relativeGain)
+    }
+
+    history.append((t, target))
+    history.removeAll { t - $0.t > 0.5 }
+
+    // Pinch with hysteresis; freeze the cursor so the click lands where the user aimed.
+    if !pinched && s.pinchRatio < config.pinchDown {
+        pinched = true
+        frozenAt = history.first(where: { t - $0.t <= 0.1 })?.p ?? target
+        freezeUntil = t + config.freezeMs / 1000
+        cursor.move(to: frozenAt)
+        cursor.mouseDown()
+        metrics.recordClick()
+    } else if pinched && s.pinchRatio > config.pinchUp {
+        pinched = false
+        cursor.mouseUp()
+    }
+    if !(pinched && t < freezeUntil) { cursor.move(to: target) }
+
+    metrics.recordLatency(captureTime: t)
+
+    if config.stillTest {
+        let elapsed = CFAbsoluteTimeGetCurrent() - wallStart
+        if elapsed >= stillWait && elapsed < stillWait + stillLen {
+            let screen = lerpToScreen(CGPoint(x: s.anchor.x, y: s.anchor.y))
+            stillRaw.append(screen)
+            stillFiltered.append(lerpToScreen(norm))
+        }
+    }
+}
+
+func finish() {
+    tracker.stop()
+    if pinched { cursor.mouseUp() }
+    print("\n" + metrics.report())
+    if config.stillTest {
+        print("--- JITTER (hand held still, \(stillRaw.count) samples) ---")
+        func line(_ name: String, _ pts: [CGPoint]) {
+            let sx: Double = std(pts.map { Double($0.x) })
+            let sy: Double = std(pts.map { Double($0.y) })
+            print(name + String(format: " σx %.2f px · σy %.2f px", sx, sy))
+        }
+        line("raw     ", stillRaw)
+        line("filtered", stillFiltered)
+    }
+    exit(0)
+}
+
+AVCaptureDevice.requestAccess(for: .video) { granted in
+    guard granted else {
+        print("Camera permission denied. Enable it for your terminal app in System Settings → Privacy & Security → Camera.")
+        exit(1)
+    }
+    do { try tracker.start() } catch { print("error: \(error.localizedDescription)"); exit(1) }
+    if config.stillTest { print("still test: hold your hand steady — capture starts in \(Int(stillWait))s for \(Int(stillLen))s") }
+}
+
+signal(SIGINT, SIG_IGN)
+let sigSource = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
+sigSource.setEventHandler { finish() }
+sigSource.resume()
+
+let tick = DispatchSource.makeTimerSource(queue: .main)
+tick.schedule(deadline: .now() + 1, repeating: 1)
+tick.setEventHandler {
+    let elapsed = CFAbsoluteTimeGetCurrent() - wallStart
+    if let d = config.duration, elapsed >= d { finish() }
+    if config.stillTest, elapsed >= stillWait + stillLen { finish() }
+}
+tick.resume()
+
+dispatchMain()
