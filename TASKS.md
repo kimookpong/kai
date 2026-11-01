@@ -45,8 +45,8 @@
 - [ ] **P1-02** — สร้าง local Swift packages: `KAICore`, `KAITracking`, `KAIGesture`, `KAIActions`, `KAIContext`, `KAIVoice`, `KAIAgent`, `KAIMCP` _ทำแล้วเฉพาะ `KAICore` (Packages/KAICore); ที่เหลือสร้างเมื่อมีโค้ดจริง_
   - Done when: app target link ได้ทุก package, แต่ละ package มี test target
 - [x] **P1-03** — ปิด App Sandbox, ตั้ง Hardened Runtime, entitlements (camera, microphone, apple-events)
-- [ ] **P1-04** — `.gitignore`, SwiftLint / swift-format config
-- [ ] **P1-05** — CI (GitHub Actions): build + `swift test` ทุก package
+- [x] **P1-04** — `.gitignore`, SwiftLint / swift-format config
+- [x] **P1-05** — CI (GitHub Actions): build + `swift test` ทุก package _เขียน workflow แล้ว ยังไม่เคยรันบน GitHub_
 
 ### Core
 - [x] **P1-06** — `KAIEvent` enum + `EventStream` (typed `AsyncStream`, multi-subscriber)
@@ -59,7 +59,7 @@
 - [ ] **P1-11** — Menu: สถานะ, mode, กล้องที่ใช้, AI status, Settings, Quit _มีสถานะ + จำนวน permission ที่ขาด + Settings + Quit; ยังไม่มี mode / กล้อง / AI status_
 - [ ] **P1-12** — Settings window (tabs: General, Gestures, Voice, AI, Permissions, Privacy) _มี General / Permissions / Privacy; แท็บ Gestures / Voice / AI เพิ่มเมื่อมีฟีเจอร์_
 - [ ] **P1-13** — Onboarding: ขอ permission ทีละตัว พร้อมคำอธิบายว่าใช้ทำอะไร + ปุ่มเปิด System Settings _มีหน้า Permissions พร้อมเหตุผลและปุ่ม Allow / Open System Settings; ยังไม่มี flow onboarding ครั้งแรก_
-- [ ] **P1-14** — Global hotkey (เปิด/ปิด KAI, push-to-talk)
+- [x] **P1-14** — Global hotkey (เปิด/ปิด KAI, push-to-talk) _⌃⌥K สลับ engage; push-to-talk รอ Phase 3_
 - [x] **P1-15** — Launch at login (`SMAppService`)
 
 **🚦 Phase Gate P1:** แอปรันเป็น menu bar, onboarding ครบ, CI เขียว

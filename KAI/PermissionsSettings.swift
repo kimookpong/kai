@@ -1,5 +1,5 @@
-import AppKit
 import AVFoundation
+import AppKit
 import KAICore
 import SwiftUI
 
@@ -67,13 +67,14 @@ enum PermissionRequester {
     }
 
     static func openSettings(_ p: Permission) {
-        let anchor: String = switch p {
-        case .accessibility: "Privacy_Accessibility"
-        case .camera: "Privacy_Camera"
-        case .microphone: "Privacy_Microphone"
-        case .screenRecording: "Privacy_ScreenCapture"
-        case .automation: "Privacy_Automation"
-        }
+        let anchor: String =
+            switch p {
+            case .accessibility: "Privacy_Accessibility"
+            case .camera: "Privacy_Camera"
+            case .microphone: "Privacy_Microphone"
+            case .screenRecording: "Privacy_ScreenCapture"
+            case .automation: "Privacy_Automation"
+            }
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(anchor)") {
             NSWorkspace.shared.open(url)
         }

@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint
+        run: swift format lint -r KAI Packages/KAICore/Sources Packages/KAICore/Tests
+
+      - name: Test packages
+        run: |
+          for p in Packages/*; do
+            swift test --package-path "$p"
+          done
+
+      - name: Build spike
+        run: swift build --package-path spike
+
+      - name: Build app
+        run: |
+          brew install xcodegen
+          xcodegen generate
+          xcodebuild -project KAI.xcodeproj -scheme KAI -configuration Debug build CODE_SIGNING_ALLOWED=NO

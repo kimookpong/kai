@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import KAICore
 import Observation
 import ServiceManagement
@@ -16,6 +17,8 @@ final class AppState {
     private let store = ConfigStore.standard()
     private let log = KAILog.logger(.app)
     @ObservationIgnored private var activationObserver: NSObjectProtocol?
+    @ObservationIgnored private let hotkey = HotkeyManager()
+    private(set) var hotkeyRegistered = false
 
     init() {
         do {
@@ -25,11 +28,23 @@ final class AppState {
             config = KAIConfig()
         }
         refreshPermissions()
+        // Control + Option + K toggles engagement.
+        hotkeyRegistered = hotkey.register(keyCode: UInt32(kVK_ANSI_K), modifiers: UInt32(controlKey | optionKey)) {
+            [weak self] in
+            self?.toggleEngaged()
+        }
         activationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.refreshPermissions() }
         }
+    }
+
+    func toggleEngaged() {
+        isEngaged.toggle()
+        let engaged = isEngaged
+        let events = events
+        Task { await events.publish(.engagementChanged(isEngaged: engaged)) }
     }
 
     func refreshPermissions() {

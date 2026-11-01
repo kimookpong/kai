@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import KAICore
 
 @Suite struct EventBusTests {
@@ -37,8 +38,9 @@ import Testing
 
 @Suite struct ConfigTests {
     private func tempStore() -> ConfigStore {
-        ConfigStore(url: FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString).appendingPathComponent("config.json"))
+        ConfigStore(
+            url: FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString).appendingPathComponent("config.json"))
     }
 
     @Test func missingFileGivesDefaults() throws {
@@ -56,7 +58,8 @@ import Testing
 
     @Test func refusesConfigFromNewerVersion() throws {
         let store = tempStore()
-        try FileManager.default.createDirectory(at: store.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: store.url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data(#"{"schemaVersion": 99}"#.utf8).write(to: store.url)
         #expect(throws: ConfigError.newerThanSupported(found: 99, supported: KAIConfig.currentVersion)) {
             try store.load()
@@ -65,7 +68,8 @@ import Testing
 
     @Test func newerFileIsNotOverwrittenByFailedLoad() throws {
         let store = tempStore()
-        try FileManager.default.createDirectory(at: store.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: store.url.deletingLastPathComponent(), withIntermediateDirectories: true)
         let original = Data(#"{"schemaVersion": 99}"#.utf8)
         try original.write(to: store.url)
         _ = try? store.load()

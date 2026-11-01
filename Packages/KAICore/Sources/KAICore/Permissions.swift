@@ -1,5 +1,5 @@
-import ApplicationServices
 import AVFoundation
+import ApplicationServices
 import CoreGraphics
 
 public enum Permission: String, Sendable, CaseIterable, Codable {
@@ -9,9 +9,11 @@ public enum Permission: String, Sendable, CaseIterable, Codable {
     public var rationale: String {
         switch self {
         case .accessibility: "Move the cursor, click and type on your behalf, and read what is under the pointer."
-        case .camera: "Track your hand so you can control the Mac by gesture. Frames are processed on this Mac and never saved."
+        case .camera:
+            "Track your hand so you can control the Mac by gesture. Frames are processed on this Mac and never saved."
         case .microphone: "Listen for voice commands while you hold the talk key."
-        case .screenRecording: "Look at the part of the screen you point at so KAI can understand it. Only used when you ask."
+        case .screenRecording:
+            "Look at the part of the screen you point at so KAI can understand it. Only used when you ask."
         case .automation: "Control other apps such as Finder and Music through AppleScript."
         }
     }

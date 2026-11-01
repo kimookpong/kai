@@ -28,10 +28,12 @@ private struct PrivacySettings: View {
 
     var body: some View {
         Form {
-            Toggle("Allow cloud AI", isOn: Binding(
-                get: { state.config.privacy.allowCloudAI },
-                set: { v in state.update { $0.privacy.allowCloudAI = v } }
-            ))
+            Toggle(
+                "Allow cloud AI",
+                isOn: Binding(
+                    get: { state.config.privacy.allowCloudAI },
+                    set: { v in state.update { $0.privacy.allowCloudAI = v } }
+                ))
             Text("Off by default. When off, nothing leaves this Mac. Camera frames are never saved or uploaded.")
                 .font(.callout).foregroundStyle(.secondary)
         }
