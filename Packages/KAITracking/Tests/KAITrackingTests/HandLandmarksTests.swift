@@ -68,3 +68,21 @@ private func hand(thumb: (Double, Double), index: (Double, Double)) -> HandLandm
         #expect(h.anchor(.palm) == nil)
     }
 }
+
+@Suite struct LowPowerRateTests {
+    @Test func usesTheTargetWhenTheCameraSupportsIt() {
+        #expect(AppleVisionTracker.lowPowerRate(lowest: 1, highest: 30) == 5)
+    }
+
+    @Test func clampsUpToTheCameraMinimum() {
+        #expect(AppleVisionTracker.lowPowerRate(lowest: 15, highest: 30) == 15)
+    }
+
+    @Test func roundsFractionalMinimumUp() {
+        #expect(AppleVisionTracker.lowPowerRate(lowest: 7.5, highest: 30) == 8)
+    }
+
+    @Test func returnsNilWhenNoWholeRateFits() {
+        #expect(AppleVisionTracker.lowPowerRate(lowest: 10.2, highest: 10.8) == nil)
+    }
+}

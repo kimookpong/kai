@@ -85,4 +85,6 @@ public protocol HandTrackingProvider: AnyObject {
     var onFrame: (@Sendable (HandFrame) -> Void)? { get set }
     func start() throws
     func stop()
+    /// Lowers the capture rate while no hand is in view, trading reaction time for CPU and battery.
+    func setLowPower(_ on: Bool)
 }

@@ -73,7 +73,7 @@
   - deps: P1-09
 - [x] **P2-02** — `HandTrackingProvider` protocol + implementation ที่เลือกจาก P0 _protocol `HandTrackingProvider` อยู่ใน KAITracking; implementation ของ Apple Vision ยังอยู่ใน spike/ รอย้าย_ _AppleVisionTracker ใน KAITracking; ยังไม่ได้วัดผลหลังย้ายจาก spike_
 - [x] **P2-03** — `HandLandmarks` model (normalized coords, confidence, handedness) _ยังไม่มี handedness (ไม่ได้ใช้ใน Phase 2)_
-- [ ] **P2-04** — Idle mode: ลด fps เมื่อไม่เห็นมือ N วินาที, ปิดกล้องเมื่อ disengage นาน _ปิดกล้องเมื่อ disengage แล้ว; ยังไม่มีการลด fps ตอนไม่เห็นมือ_
+- [ ] **P2-04** — Idle mode: ลด fps เมื่อไม่เห็นมือ N วินาที, ปิดกล้องเมื่อ disengage นาน _ปิดกล้องเมื่อ disengage แล้ว; ไม่เห็นมือเกิน 2 วินาที → ลดเหลือ 15 fps (กล้องนี้รองรับต่ำสุด 15 ที่ 640x480) ยังไม่ได้วัด CPU จริง_
 - [ ] **P2-05** — Camera-active indicator ใน menu bar (นอกเหนือจากไฟเขียวของระบบ) _ไอคอน menu bar เปลี่ยนเมื่อ engaged; ยังไม่มีตัวบอกกล้องแยก_
 
 ### Signal processing

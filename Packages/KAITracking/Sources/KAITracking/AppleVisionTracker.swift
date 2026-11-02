@@ -23,6 +23,7 @@ public final class AppleVisionTracker: NSObject, HandTrackingProvider, AVCapture
     private let jointConfidence: Float
     private let tipConfidence: Float
     private var isConfigured = false
+    private var device: AVCaptureDevice?
 
     public enum TrackerError: Error, Equatable {
         case noCamera, cannotAddInput, cannotAddOutput
@@ -46,8 +47,37 @@ public final class AppleVisionTracker: NSObject, HandTrackingProvider, AVCapture
         }
     }
 
+    /// Low power drops the camera towards 5 fps; turning it off restores the device default.
+    /// AVFoundation raises an Objective-C exception (which Swift cannot catch) for a frame duration the active
+    /// format does not support, so the target rate is clamped to the supported ranges first.
+    public func setLowPower(_ on: Bool) {
+        queue.async { [weak self] in
+            guard let device = self?.device, (try? device.lockForConfiguration()) != nil else { return }
+            defer { device.unlockForConfiguration() }
+            guard on else {
+                device.activeVideoMinFrameDuration = .invalid
+                return
+            }
+            let ranges = device.activeFormat.videoSupportedFrameRateRanges
+            guard let lowest = ranges.map(\.minFrameRate).min(), let highest = ranges.map(\.maxFrameRate).max(),
+                let rate = Self.lowPowerRate(lowest: lowest, highest: highest)
+            else { return }
+            device.activeVideoMinFrameDuration = CMTime(value: 1, timescale: rate)
+        }
+    }
+
+    /// The whole-number rate closest to `target` that the format supports, or nil if none does.
+    /// The MacBook Pro camera supports only 15 to 30 fps at 640x480, so low power there means 15 fps.
+    public static func lowPowerRate(lowest: Double, highest: Double, target: Double = 5) -> Int32? {
+        let floor = lowest.rounded(.up), ceiling = highest.rounded(.down)
+        guard floor <= ceiling else { return nil }
+        let rate = Int32(min(max(target, floor), ceiling))
+        return rate > 0 ? rate : nil
+    }
+
     private func configure() throws {
         guard let device = AVCaptureDevice.default(for: .video) else { throw TrackerError.noCamera }
+        self.device = device
         session.beginConfiguration()
         defer { session.commitConfiguration() }
         session.sessionPreset = .vga640x480

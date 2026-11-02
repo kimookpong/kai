@@ -11,6 +11,8 @@ private final class FakeTracker: HandTrackingProvider, @unchecked Sendable {
     private(set) var stopped = false
     func start() throws { started = true }
     func stop() { stopped = true }
+    private(set) var lowPowerCalls: [Bool] = []
+    func setLowPower(_ on: Bool) { lowPowerCalls.append(on) }
 }
 
 private final class FakeMouse: MouseControlling {
@@ -118,6 +120,46 @@ private func frame(_ t: Double, ratio: Double = 1.0, middle: Double? = nil) -> H
         for i in 0..<8 { tracker.onFrame?(frame(Double(i) / 30, ratio: 0.9, middle: i < 5 ? 0.9 : 0.2)) }
         session.stop()
         #expect(mouse.calls.last == .releaseRight)
+    }
+
+    @Test func idlesTheCameraAfterTheHandHasBeenGoneForAWhile() throws {
+        let (session, tracker, _) = make()
+        try session.start()
+        tracker.onFrame?(frame(0))
+        for i in 1...100 { tracker.onFrame?(HandFrame(timestamp: Double(i) / 30, hand: nil)) }  // ~3.3 s without a hand
+        #expect(tracker.lowPowerCalls == [true])
+    }
+
+    @Test func restoresFullRateAsSoonAsAHandReturns() throws {
+        let (session, tracker, _) = make()
+        try session.start()
+        tracker.onFrame?(frame(0))
+        for i in 1...100 { tracker.onFrame?(HandFrame(timestamp: Double(i) / 30, hand: nil)) }
+        tracker.onFrame?(frame(4.0))
+        #expect(tracker.lowPowerCalls == [true, false])
+    }
+
+    @Test func staysAtFullRateWhileAHandIsVisible() throws {
+        let (session, tracker, _) = make()
+        try session.start()
+        for i in 0..<120 { tracker.onFrame?(frame(Double(i) / 30)) }
+        #expect(tracker.lowPowerCalls.isEmpty)
+    }
+
+    @Test func briefDropoutsDoNotIdleTheCamera() throws {
+        let (session, tracker, _) = make()
+        try session.start()
+        tracker.onFrame?(frame(0))
+        for i in 1...30 { tracker.onFrame?(HandFrame(timestamp: Double(i) / 30, hand: nil)) }  // 1 s
+        tracker.onFrame?(frame(1.1))
+        #expect(tracker.lowPowerCalls.isEmpty)
+    }
+
+    @Test func sessionThatNeverSeesAHandStillIdles() throws {
+        let (session, tracker, _) = make()
+        try session.start()
+        for i in 0...90 { tracker.onFrame?(HandFrame(timestamp: Double(i) / 30, hand: nil)) }
+        #expect(tracker.lowPowerCalls == [true])
     }
 
     @Test func stopWithoutPinchDoesNotRelease() throws {

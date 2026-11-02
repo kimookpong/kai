@@ -15,6 +15,9 @@ public final class GestureSession: @unchecked Sendable {
     private let actions: ActionMapper
     private let gestureConfig: GestureConfig
     private var engine: GestureEngine
+    private let lowPowerAfter: Double
+    private var lastHandTime: Double?
+    private var isLowPower = false
     /// The action each finger pressed, so the matching button is the one released.
     private var held: [PinchFinger: GestureAction] = [:]
 
@@ -23,8 +26,10 @@ public final class GestureSession: @unchecked Sendable {
         tracker: HandTrackingProvider = AppleVisionTracker(),
         mouse: MouseControlling = MouseController(),
         screen: CGRect = CGDisplayBounds(CGMainDisplayID()),
-        actions: ActionMapper = ActionMapper()
+        actions: ActionMapper = ActionMapper(),
+        lowPowerAfter: Double = 2.0
     ) {
+        self.lowPowerAfter = lowPowerAfter
         gestureConfig = config
         engine = GestureEngine(config: config)
         self.tracker = tracker
@@ -35,6 +40,8 @@ public final class GestureSession: @unchecked Sendable {
 
     public func start() throws {
         engine = GestureEngine(config: gestureConfig)
+        lastHandTime = nil
+        isLowPower = false
         tracker.onFrame = { [weak self] frame in self?.handle(frame) }
         try tracker.start()
     }
@@ -48,6 +55,7 @@ public final class GestureSession: @unchecked Sendable {
     }
 
     public func handle(_ frame: HandFrame) {
+        updatePower(for: frame)
         for event in engine.process(frame, engaged: true) {
             switch event {
             case .pointerMoved(let p):
@@ -70,6 +78,20 @@ public final class GestureSession: @unchecked Sendable {
             case .handLost:
                 break
             }
+        }
+    }
+
+    /// Drops the camera rate when the hand has been out of view for a while and restores it when it returns.
+    /// The first frame counts as the last time a hand was seen, so a session that starts with no hand also idles.
+    private func updatePower(for frame: HandFrame) {
+        if frame.hand != nil || lastHandTime == nil { lastHandTime = frame.timestamp }
+        let handVisible = frame.hand != nil
+        if handVisible, isLowPower {
+            isLowPower = false
+            tracker.setLowPower(false)
+        } else if !handVisible, !isLowPower, let seen = lastHandTime, frame.timestamp - seen > lowPowerAfter {
+            isLowPower = true
+            tracker.setLowPower(true)
         }
     }
 }
