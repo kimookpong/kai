@@ -5,7 +5,7 @@ import Foundation
 let config = Config.parse(CommandLine.arguments)
 let metrics = Metrics()
 let cursor = CursorController(dryRun: config.dryRun)
-let tracker = HandTracker(anchor: config.anchor)
+let tracker = HandTracker(anchor: config.anchor, minConfidence: config.minConfidence)
 let filterX = OneEuroFilter(minCutoff: config.minCutoff, beta: config.beta)
 let filterY = OneEuroFilter(minCutoff: config.minCutoff, beta: config.beta)
 
@@ -36,6 +36,11 @@ if !config.dryRun && !CursorController.checkAccessibility() {
 
 // MARK: pipeline state (touched only on the camera queue)
 var pinched = false
+var pinchFrames = 0
+/// After losing the hand mid-pinch, the fingers must open before another click can fire.
+var needsRearm = false
+/// Cursor speed (px/s over the previous 100 ms) at the moment the last pinch fired. Read by ClickTest.
+var lastClickSpeed = 0.0
 var freezeUntil = 0.0
 var frozenAt = CGPoint.zero
 var lastNorm: CGPoint?
@@ -45,7 +50,7 @@ var history: [(t: Double, p: CGPoint)] = []
 var stillStart: Double?
 var stillRaw: [CGPoint] = []
 var stillFiltered: [CGPoint] = []
-let stillWait = 3.0, stillLen = 5.0
+let stillWait = 6.0, stillLen = 5.0
 let wallStart = CFAbsoluteTimeGetCurrent()
 
 func lerpToScreen(_ n: CGPoint) -> CGPoint {
@@ -65,13 +70,15 @@ func std(_ v: [Double]) -> Double {
 tracker.onSample = { sample, visionSeconds in
     metrics.recordFrame(hand: sample != nil, visionSeconds: visionSeconds, confidence: sample?.confidence)
     guard let s = sample else {
-        if pinched { cursor.mouseUp(); pinched = false }
+        if pinched { cursor.mouseUp(); pinched = false; needsRearm = true }
+        pinchFrames = 0
         filterX.reset(); filterY.reset(); lastNorm = nil
         return
     }
     let t = s.captureTime
-    let nx = filterX.filter(s.anchor.x, at: t)
-    let ny = filterY.filter(s.anchor.y, at: t)
+    // Filter in milli-frame units (~1000 per frame width) so beta behaves like the pixel-based selftest.
+    let nx = filterX.filter(s.anchor.x * 1000, at: t) / 1000
+    let ny = filterY.filter(s.anchor.y * 1000, at: t) / 1000
     let norm = CGPoint(x: nx, y: ny)
 
     var target: CGPoint
@@ -88,10 +95,19 @@ tracker.onSample = { sample, visionSeconds in
     history.append((t, target))
     history.removeAll { t - $0.t > 0.5 }
 
-    // Pinch with hysteresis; freeze the cursor so the click lands where the user aimed.
-    if !pinched && s.pinchRatio < config.pinchDown {
+    // Pinch with hysteresis and debounce; freeze the cursor so the click lands where the user aimed.
+    if needsRearm && s.pinchRatio > config.pinchUp { needsRearm = false }
+    if !pinched {
+        pinchFrames = (!needsRearm && s.pinchRatio < config.pinchDown) ? pinchFrames + 1 : 0
+    }
+    if !pinched && pinchFrames >= config.pinchFrames {
         pinched = true
-        frozenAt = history.first(where: { t - $0.t <= 0.1 })?.p ?? target
+        pinchFrames = 0
+        let past = history.first(where: { t - $0.t <= 0.1 })
+        frozenAt = past?.p ?? target
+        if let past, t > past.t {
+            lastClickSpeed = Double(hypot(target.x - past.p.x, target.y - past.p.y)) / (t - past.t)
+        }
         freezeUntil = t + config.freezeMs / 1000
         cursor.move(to: frozenAt)
         cursor.mouseDown()
@@ -118,6 +134,10 @@ func finish(extra: String? = nil) {
     tracker.stop()
     if pinched { cursor.mouseUp() }
     print("\n" + metrics.report())
+    if !tracker.drops.isEmpty {
+        print("--- DROPPED FRAMES ---")
+        for (k, v) in tracker.drops.sorted(by: { $0.value > $1.value }) { print("\(v)\t\(k)") }
+    }
     if let extra { print(extra) }
     if config.stillTest {
         print("--- JITTER (hand held still, \(stillRaw.count) samples) ---")
@@ -128,6 +148,15 @@ func finish(extra: String? = nil) {
         }
         line("raw     ", stillRaw)
         line("filtered", stillFiltered)
+        // Frame-to-frame step size: high-frequency noise, independent of slow hand drift.
+        func step(_ name: String, _ pts: [CGPoint]) {
+            let d = zip(pts.dropFirst(), pts).map { Double(hypot($0.x - $1.x, $0.y - $1.y)) }
+            guard !d.isEmpty else { return }
+            let rms = (d.map { $0 * $0 }.reduce(0, +) / Double(d.count)).squareRoot()
+            print(name + String(format: " frame-to-frame step: rms %.2f px · p95 %.2f px", rms, Metrics.percentile(d, 0.95)))
+        }
+        step("raw     ", stillRaw)
+        step("filtered", stillFiltered)
     }
     exit(0)
 }

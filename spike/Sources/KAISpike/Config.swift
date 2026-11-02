@@ -12,6 +12,7 @@ struct Config {
     var beta = 0.05
     var stillTest = false
     var selfTest = false
+    var minConfidence: Float = 0.3
     var clickTest = false
     /// Active region of the camera frame mapped to the full screen (normalized, mirrored).
     var regionLo = 0.2
@@ -20,6 +21,7 @@ struct Config {
     var pinchDown = 0.30
     var pinchUp = 0.45
     var freezeMs = 150.0
+    var pinchFrames = 2
 
     static func parse(_ args: [String]) -> Config {
         var c = Config()
@@ -34,6 +36,8 @@ struct Config {
             case "--min-cutoff": if let v = next(), let d = Double(v) { c.minCutoff = d }
             case "--beta": if let v = next(), let d = Double(v) { c.beta = d }
             case "--still-test": c.stillTest = true
+            case "--min-conf": if let v = next(), let d = Float(v) { c.minConfidence = d }
+            case "--pinch-frames": if let v = next(), let n = Int(v) { c.pinchFrames = max(1, n) }
             case "--selftest": c.selfTest = true
             case "--click-test": c.clickTest = true
             case "--help", "-h": printUsage(); exit(0)
@@ -54,6 +58,8 @@ struct Config {
           --duration <sec>           stop after N seconds and print report
           --still-test               hold hand still: measure jitter (3s wait, 5s capture)
           --click-test               full-screen target test: 30 trials at 24/44/64 pt (needs live events)
+          --min-conf <0-1>           minimum joint confidence (default 0.3)
+          --pinch-frames <n>         consecutive frames below threshold to count as a pinch (default 2)
           --selftest                 verify One Euro filter on synthetic noise (no camera)
           --min-cutoff <hz>          One Euro min cutoff (default 1.0)
           --beta <v>                 One Euro beta (default 0.05)

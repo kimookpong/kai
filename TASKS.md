@@ -10,28 +10,28 @@
 ## Phase 0 — Feasibility Spike
 
 - [x] **P0-01** — สร้าง Swift command-line / minimal app สำหรับ spike (แยกจากโปรเจกต์หลัก, ทิ้งได้)
-- [ ] **P0-02** — Capture กล้องด้วย AVFoundation ที่ 30 และ 60 fps (ถ้ากล้องรองรับ) _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
+- [x] **P0-02** — Capture กล้องด้วย AVFoundation ที่ 30 และ 60 fps (ถ้ากล้องรองรับ) _ทดสอบที่ ~28–30 fps; 60 fps ยังไม่ได้ลอง_
   - Done when: แสดง preview + วัด fps จริงได้
-- [ ] **P0-03** — Hand landmarks ด้วย Apple Vision (`VNDetectHumanHandPoseRequest`) _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
+- [x] **P0-03** — Hand landmarks ด้วย Apple Vision (`VNDetectHumanHandPoseRequest`)
   - Done when: วาด 21 จุดบน preview ได้, log confidence ต่อจุด
   - deps: P0-02
 - [ ] **P0-04** — Hand landmarks ด้วย MediaPipe (Hand Landmarker)
   - Done when: วาด 21 จุด + ค่า z ได้
   - deps: P0-02
-- [ ] **P0-05** — ขยับ cursor ด้วย `CGEvent` จาก landmark _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
+- [x] **P0-05** — ขยับ cursor ด้วย `CGEvent` จาก landmark _ทดสอบเฉพาะ anchor mcp; tip / palm ยังไม่ได้เทียบ_
   - ทดลอง anchor 3 แบบ: ปลายนิ้วชี้ / โคนนิ้วชี้ (MCP) / กลางฝ่ามือ
   - deps: P0-03
 - [x] **P0-06** — Implement One Euro Filter + ทดลองปรับ `minCutoff`, `beta`
 - [ ] **P0-07** — ทดลอง Absolute vs Relative mapping _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
-- [ ] **P0-08** — Pinch detection (ระยะ thumb tip ↔ index tip, normalize ด้วยขนาดมือ) + freeze cursor ตอนเริ่ม pinch _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
-- [ ] **P0-09** — เครื่องมือวัดผล _มี latency / fps / CPU / jitter / click-target test (`--click-test`) — รอรันบนเครื่องจริง_
+- [x] **P0-08** — Pinch detection (ระยะ thumb tip ↔ index tip, normalize ด้วยขนาดมือ) + freeze cursor ตอนเริ่ม pinch _ต้องมี debounce 2 เฟรม + re-arm หลังมือหาย (ดู docs/spike-results.md)_
+- [x] **P0-09** — เครื่องมือวัดผล
   - Latency: timestamp เฟรม → timestamp CGEvent
   - Jitter: std dev ของตำแหน่ง cursor ตอนมือนิ่ง 5 วินาที
   - CPU % / fps
   - Click test: เป้าสุ่มขนาด 24 / 44 / 64 pt, นับ hit rate
 - [ ] **P0-10** — ทดสอบในสภาพแสงต่าง ๆ (กลางวัน, ไฟห้อง, แสงน้อย) และระยะห่าง 40 / 60 / 90 cm
 - [ ] **P0-11** — ทดสอบมุมกล้อง MacBook built-in vs กล้องภายนอก / Continuity Camera
-- [ ] **P0-12** — เขียนผลลงใน `docs/spike-results.md` + ตัดสินใจ
+- [ ] **P0-12** — เขียนผลลงใน `docs/spike-results.md` + ตัดสินใจ _สรุปชั่วคราวใน docs/spike-results.md: Go แบบมีเงื่อนไข; ยังขาดผลเทียบ anchor / mode / แสง_
   - Tracking provider · Mapping mode · Anchor point · ค่า filter เริ่มต้น
 
 **🚦 Phase Gate P0:** มี `docs/spike-results.md` พร้อมตัวเลข และตัดสิน Go / No-go ตาม PLAN.md §5

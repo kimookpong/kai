@@ -20,11 +20,17 @@ final class HandTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate 
         return r
     }()
     private let anchor: Anchor
+    private let minConfidence: Float
+    /// Why frames produced no sample. Written on the camera queue; read after stop().
+    private(set) var drops: [String: Int] = [:]
 
     /// Called on the camera queue. nil sample means no hand in frame.
     var onSample: ((HandSample?, _ visionSeconds: Double) -> Void)?
 
-    init(anchor: Anchor) { self.anchor = anchor }
+    init(anchor: Anchor, minConfidence: Float = 0.3) {
+        self.anchor = anchor
+        self.minConfidence = minConfidence
+    }
 
     func start() throws {
         guard let device = AVCaptureDevice.default(for: .video) else {
@@ -61,7 +67,12 @@ final class HandTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate 
         try? handler.perform([request])
         let visionSeconds = CFAbsoluteTimeGetCurrent() - t0
 
-        guard let obs = request.results?.first, let sample = makeSample(obs, captureTime: captureTime) else {
+        guard let obs = request.results?.first else {
+            drops["vision: no hand observation", default: 0] += 1
+            onSample?(nil, visionSeconds)
+            return
+        }
+        guard let sample = makeSample(obs, captureTime: captureTime) else {
             onSample?(nil, visionSeconds)
             return
         }
@@ -69,12 +80,18 @@ final class HandTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate 
     }
 
     private func makeSample(_ obs: VNHumanHandPoseObservation, captureTime: Double) -> HandSample? {
-        func pt(_ j: VNHumanHandPoseObservation.JointName, min: Float = 0.3) -> (CGPoint, Float)? {
-            guard let p = try? obs.recognizedPoint(j), p.confidence >= min else { return nil }
+        var failed: String?
+        // Thumb and index tips overlap while pinching, which lowers Vision's confidence; accept lower there.
+        func pt(_ j: VNHumanHandPoseObservation.JointName, min: Float? = nil) -> (CGPoint, Float)? {
+            guard let p = try? obs.recognizedPoint(j), p.confidence >= (min ?? minConfidence) else {
+                if failed == nil { failed = "low confidence: \(j.rawValue.rawValue)" }
+                return nil
+            }
             return (p.location, p.confidence)
         }
+        defer { if let failed { drops[failed, default: 0] += 1 } }
         guard let (wrist, _) = pt(.wrist), let (middleMCP, _) = pt(.middleMCP),
-              let (thumbTip, _) = pt(.thumbTip), let (indexTip, conf) = pt(.indexTip) else { return nil }
+              let (thumbTip, _) = pt(.thumbTip, min: 0.1), let (indexTip, conf) = pt(.indexTip, min: 0.1) else { return nil }
 
         let raw: CGPoint
         switch anchor {

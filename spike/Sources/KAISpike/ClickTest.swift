@@ -3,7 +3,7 @@ import AppKit
 /// Full-screen target-clicking test (P0-09). 10 trials each at 24 / 44 / 64 pt, shuffled.
 /// Works with real mouse events, including the ones KAI posts.
 final class ClickTest {
-    struct Trial { let size: CGFloat; var center: CGPoint; var hit = false; var error: CGFloat = 0; var ms: Double = 0 }
+    struct Trial { let size: CGFloat; var center: CGPoint; var hit = false; var error: CGFloat = 0; var dx: CGFloat = 0; var dy: CGFloat = 0; var ms: Double = 0; var speed: Double = 0 }
 
     private var trials: [Trial] = []
     private var index = 0
@@ -51,7 +51,10 @@ final class ClickTest {
 
     private func handleClick(_ p: CGPoint) {
         var t = trials[index]
-        t.error = hypot(p.x - t.center.x, p.y - t.center.y)
+        t.dx = p.x - t.center.x
+        t.dy = p.y - t.center.y
+        t.error = hypot(t.dx, t.dy)
+        t.speed = lastClickSpeed
         t.hit = t.error <= t.size / 2
         t.ms = (CFAbsoluteTimeGetCurrent() - shownAt) * 1000
         trials[index] = t
@@ -70,6 +73,20 @@ final class ClickTest {
             let ms = t.map(\.ms).reduce(0, +) / Double(t.count)
             lines.append(String(format: "%2.0f pt: hit %d/%d (%.0f%%) · mean error %.1f px · mean time %.0f ms",
                                 size, hits, t.count, Double(hits) / Double(t.count) * 100, err, ms))
+        }
+        if !done.isEmpty {
+            func mean(_ v: [Double]) -> Double { v.reduce(0, +) / Double(v.count) }
+            func sd(_ v: [Double]) -> Double {
+                let m = mean(v)
+                return (v.map { ($0 - m) * ($0 - m) }.reduce(0, +) / Double(max(v.count - 1, 1))).squareRoot()
+            }
+            let dxs = done.map { Double($0.dx) }, dys = done.map { Double($0.dy) }
+            let errs = done.map { Double($0.error) }.sorted()
+            lines.append(String(format: "bias (mean signed offset, +x right / +y down): dx %+.0f px · dy %+.0f px", mean(dxs), mean(dys)))
+            lines.append(String(format: "scatter (std):                                  dx %.0f px · dy %.0f px", sd(dxs), sd(dys)))
+            lines.append(String(format: "median error %.0f px", errs[errs.count / 2]))
+            lines.append("per trial (size, dx, dy, cursor speed px/s at click):")
+            for t in done { lines.append(String(format: "  %2.0f  %+5.0f %+5.0f  %6.0f", t.size, t.dx, t.dy, t.speed)) }
         }
         onDone(lines.joined(separator: "\n"))
     }
