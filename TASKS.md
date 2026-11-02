@@ -91,7 +91,7 @@
 - [x] **P2-13** — `GestureEvent` + `ActionMapper` (gesture → action ตาม config, ยังไม่ต้องมี app profile) _ActionMapper มีแค่ pinch → leftButton; gesture อื่นรอ Phase 5_
 
 ### Actions
-- [ ] **P2-14** — `MouseController`: move, left/right/double click, drag, scroll (vertical + horizontal) _ทำแล้ว: move, ปุ่มซ้าย (กด/ปล่อย → ลากได้); ยังไม่มี right click, double click, scroll_
+- [ ] **P2-14** — `MouseController`: move, left/right/double click, drag, scroll (vertical + horizontal) _ทำแล้ว: move, ปุ่มซ้าย (กด/ปล่อย → ลากได้), double click (นับคลิกด้วย ClickCounter; ยังไม่ทดสอบกับแอปจริง); ยังไม่มี right click, scroll_
 - [ ] **P2-15** — ป้องกัน feedback loop: ไม่ให้ cursor event ที่ KAI สร้างถูกตีความซ้ำ
 
 ### UX

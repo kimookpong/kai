@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 
 /// Something that can move the pointer and press the primary button. Lets the gesture glue be tested without macOS.
 public protocol MouseControlling: AnyObject {
@@ -12,6 +13,8 @@ public protocol MouseControlling: AnyObject {
 public final class MouseController: MouseControlling, @unchecked Sendable {
     public private(set) var position: CGPoint
     public private(set) var isLeftDown = false
+    private var clicks = ClickCounter()
+    private var clickCount = 1
 
     public init(start: CGPoint = CGPoint(x: 0, y: 0)) { position = start }
 
@@ -23,6 +26,7 @@ public final class MouseController: MouseControlling, @unchecked Sendable {
     public func pressLeft() {
         guard !isLeftDown else { return }
         isLeftDown = true
+        clickCount = clicks.register(at: position, time: ProcessInfo.processInfo.systemUptime)
         post(.leftMouseDown)
     }
 
@@ -34,7 +38,13 @@ public final class MouseController: MouseControlling, @unchecked Sendable {
     }
 
     private func post(_ type: CGEventType) {
-        CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: position, mouseButton: .left)?
-            .post(tap: .cghidEventTap)
+        guard
+            let event = CGEvent(
+                mouseEventSource: nil, mouseType: type, mouseCursorPosition: position, mouseButton: .left)
+        else { return }
+        if type == .leftMouseDown || type == .leftMouseUp {
+            event.setIntegerValueField(.mouseEventClickState, value: Int64(clickCount))
+        }
+        event.post(tap: .cghidEventTap)
     }
 }
