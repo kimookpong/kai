@@ -15,26 +15,26 @@
 - [x] **P0-03** — Hand landmarks ด้วย Apple Vision (`VNDetectHumanHandPoseRequest`)
   - Done when: วาด 21 จุดบน preview ได้, log confidence ต่อจุด
   - deps: P0-02
-- [ ] **P0-04** — Hand landmarks ด้วย MediaPipe (Hand Landmarker)
+- [ ] **P0-04** — Hand landmarks ด้วย MediaPipe (Hand Landmarker) _ข้าม: Apple Vision เพียงพอ ตัดสินใจโดยผู้ใช้ให้หยุดทดสอบ_
   - Done when: วาด 21 จุด + ค่า z ได้
   - deps: P0-02
-- [x] **P0-05** — ขยับ cursor ด้วย `CGEvent` จาก landmark _ทดสอบเฉพาะ anchor mcp; tip / palm ยังไม่ได้เทียบ_
+- [x] **P0-05** — ขยับ cursor ด้วย `CGEvent` จาก landmark _เทียบ anchor แล้ว: mcp ดีที่สุด (ดู docs/spike-results.md)_
   - ทดลอง anchor 3 แบบ: ปลายนิ้วชี้ / โคนนิ้วชี้ (MCP) / กลางฝ่ามือ
   - deps: P0-03
 - [x] **P0-06** — Implement One Euro Filter + ทดลองปรับ `minCutoff`, `beta`
-- [ ] **P0-07** — ทดลอง Absolute vs Relative mapping _โค้ดพร้อมใน spike/ — รอรันบนเครื่องจริง (ต้องใช้สิทธิ์กล้อง)_
+- [ ] **P0-07** — ทดลอง Absolute vs Relative mapping _absolute ใช้ได้ผลแล้ว; relative ไม่มีข้อมูล ข้ามตามที่ผู้ใช้สั่งหยุดทดสอบ; ใช้ absolute_
 - [x] **P0-08** — Pinch detection (ระยะ thumb tip ↔ index tip, normalize ด้วยขนาดมือ) + freeze cursor ตอนเริ่ม pinch _ต้องมี debounce 2 เฟรม + re-arm หลังมือหาย (ดู docs/spike-results.md)_
 - [x] **P0-09** — เครื่องมือวัดผล
   - Latency: timestamp เฟรม → timestamp CGEvent
   - Jitter: std dev ของตำแหน่ง cursor ตอนมือนิ่ง 5 วินาที
   - CPU % / fps
   - Click test: เป้าสุ่มขนาด 24 / 44 / 64 pt, นับ hit rate
-- [ ] **P0-10** — ทดสอบในสภาพแสงต่าง ๆ (กลางวัน, ไฟห้อง, แสงน้อย) และระยะห่าง 40 / 60 / 90 cm
-- [ ] **P0-11** — ทดสอบมุมกล้อง MacBook built-in vs กล้องภายนอก / Continuity Camera
-- [ ] **P0-12** — เขียนผลลงใน `docs/spike-results.md` + ตัดสินใจ _สรุปชั่วคราวใน docs/spike-results.md: Go แบบมีเงื่อนไข; ยังขาดผลเทียบ anchor / mode / แสง_
+- [ ] **P0-10** — ทดสอบในสภาพแสงต่าง ๆ (กลางวัน, ไฟห้อง, แสงน้อย) และระยะห่าง 40 / 60 / 90 cm _ข้ามไว้ก่อน: ยังไม่ได้ทดสอบแสงน้อย/ระยะ_
+- [ ] **P0-11** — ทดสอบมุมกล้อง MacBook built-in vs กล้องภายนอก / Continuity Camera _ข้ามไว้ก่อน: ทดสอบเฉพาะกล้อง built-in_
+- [x] **P0-12** — เขียนผลลงใน `docs/spike-results.md` + ตัดสินใจ _Go แบบมีเงื่อนไข: Apple Vision + mcp + absolute (ดู docs/spike-results.md)_
   - Tracking provider · Mapping mode · Anchor point · ค่า filter เริ่มต้น
 
-**🚦 Phase Gate P0:** มี `docs/spike-results.md` พร้อมตัวเลข และตัดสิน Go / No-go ตาม PLAN.md §5
+**🚦 Phase Gate P0:** มี `docs/spike-results.md` พร้อมตัวเลข และตัดสิน Go / No-go ตาม PLAN.md §5 — ✅ ผ่านแบบมีเงื่อนไข (click 27/30, latency p95 ~90 ms และ CPU ~25% ยังเกินเกณฑ์ ต้องติดตามใน Phase 2)
 
 ---
 

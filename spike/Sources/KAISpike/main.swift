@@ -95,19 +95,21 @@ tracker.onSample = { sample, visionSeconds in
     history.append((t, target))
     history.removeAll { t - $0.t > 0.5 }
 
-    // Pinch with hysteresis and debounce; freeze the cursor so the click lands where the user aimed.
+    // Cursor speed over the previous 100 ms.
+    let past = history.first(where: { t - $0.t <= 0.1 })
+    var speed = 0.0
+    if let past, t > past.t { speed = Double(hypot(target.x - past.p.x, target.y - past.p.y)) / (t - past.t) }
+
+    // Pinch with hysteresis, debounce and a speed gate; freeze the cursor so the click lands where the user aimed.
     if needsRearm && s.pinchRatio > config.pinchUp { needsRearm = false }
     if !pinched {
         pinchFrames = (!needsRearm && s.pinchRatio < config.pinchDown) ? pinchFrames + 1 : 0
     }
-    if !pinched && pinchFrames >= config.pinchFrames {
+    if !pinched && pinchFrames >= config.pinchFrames && speed <= config.maxClickSpeed {
         pinched = true
         pinchFrames = 0
-        let past = history.first(where: { t - $0.t <= 0.1 })
         frozenAt = past?.p ?? target
-        if let past, t > past.t {
-            lastClickSpeed = Double(hypot(target.x - past.p.x, target.y - past.p.y)) / (t - past.t)
-        }
+        lastClickSpeed = speed
         freezeUntil = t + config.freezeMs / 1000
         cursor.move(to: frozenAt)
         cursor.mouseDown()

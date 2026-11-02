@@ -22,6 +22,8 @@ struct Config {
     var pinchUp = 0.45
     var freezeMs = 150.0
     var pinchFrames = 2
+    /// Ignore a pinch while the cursor is faster than this (px/s); fires once it slows down.
+    var maxClickSpeed = 400.0
 
     static func parse(_ args: [String]) -> Config {
         var c = Config()
@@ -38,6 +40,7 @@ struct Config {
             case "--still-test": c.stillTest = true
             case "--min-conf": if let v = next(), let d = Float(v) { c.minConfidence = d }
             case "--pinch-frames": if let v = next(), let n = Int(v) { c.pinchFrames = max(1, n) }
+            case "--max-click-speed": if let v = next(), let d = Double(v) { c.maxClickSpeed = d }
             case "--selftest": c.selfTest = true
             case "--click-test": c.clickTest = true
             case "--help", "-h": printUsage(); exit(0)
@@ -60,6 +63,7 @@ struct Config {
           --click-test               full-screen target test: 30 trials at 24/44/64 pt (needs live events)
           --min-conf <0-1>           minimum joint confidence (default 0.3)
           --pinch-frames <n>         consecutive frames below threshold to count as a pinch (default 2)
+          --max-click-speed <px/s>   hold a pinch until cursor is slower than this (default 400)
           --selftest                 verify One Euro filter on synthetic noise (no camera)
           --min-cutoff <hz>          One Euro min cutoff (default 1.0)
           --beta <v>                 One Euro beta (default 0.05)
