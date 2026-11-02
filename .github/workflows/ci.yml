@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Lint
-        run: swift format lint -r KAI Packages/KAICore/Sources Packages/KAICore/Tests
+        run: swift format lint -r KAI Packages/*/Sources Packages/*/Tests
 
       - name: Test packages
         run: |

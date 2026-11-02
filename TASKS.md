@@ -71,24 +71,24 @@
 ### Tracking pipeline
 - [ ] **P2-01** — `CameraManager` (เลือกกล้อง, fps, รันบน dedicated queue)
   - deps: P1-09
-- [ ] **P2-02** — `HandTrackingProvider` protocol + implementation ที่เลือกจาก P0
-- [ ] **P2-03** — `HandLandmarks` model (normalized coords, confidence, handedness)
+- [ ] **P2-02** — `HandTrackingProvider` protocol + implementation ที่เลือกจาก P0 _protocol `HandTrackingProvider` อยู่ใน KAITracking; implementation ของ Apple Vision ยังอยู่ใน spike/ รอย้าย_
+- [x] **P2-03** — `HandLandmarks` model (normalized coords, confidence, handedness) _ยังไม่มี handedness (ไม่ได้ใช้ใน Phase 2)_
 - [ ] **P2-04** — Idle mode: ลด fps เมื่อไม่เห็นมือ N วินาที, ปิดกล้องเมื่อ disengage นาน
 - [ ] **P2-05** — Camera-active indicator ใน menu bar (นอกเหนือจากไฟเขียวของระบบ)
 
 ### Signal processing
-- [ ] **P2-06** — One Euro Filter (unit tests ด้วย synthetic signal)
+- [x] **P2-06** — One Euro Filter (unit tests ด้วย synthetic signal)
 - [ ] **P2-07** — Dead zone + acceleration curve (ปรับได้ใน config)
 - [ ] **P2-08** — Calibration flow: ให้ผู้ใช้ชี้ 4 มุมจอ → สร้าง mapping region
 - [ ] **P2-09** — Multi-monitor mapping
 
 ### Gesture engine
-- [ ] **P2-10** — `GestureStateMachine` (IDLE → HAND_DETECTED → ENGAGED → TRACKING → PINCH → DRAG → RELEASE)
+- [x] **P2-10** — `GestureStateMachine` (IDLE → HAND_DETECTED → ENGAGED → TRACKING → PINCH → DRAG → RELEASE) _GestureEngine: idle / tracking / pinching + clutch (engaged flag); ท่า drag ยังรอ_
   - Done when: state transitions มี unit test ครบ รวมกรณีมือหายกลางคัน
 - [ ] **P2-11** — Clutch: engage / disengage gesture (เช่น โชว์ฝ่ามือค้าง 0.5s) + hotkey
-- [ ] **P2-12** — Recognizers: pinch, pinch-hold, two-finger pinch, scroll pose
+- [ ] **P2-12** — Recognizers: pinch, pinch-hold, two-finger pinch, scroll pose _PinchDetector เสร็จ (hysteresis, debounce, speed gate, re-arm); two-finger / scroll pose / pinch-hold รอ_
   - แต่ละตัวมี threshold, confidence, min/max duration, cooldown
-- [ ] **P2-13** — `GestureEvent` + `ActionMapper` (gesture → action ตาม config, ยังไม่ต้องมี app profile)
+- [x] **P2-13** — `GestureEvent` + `ActionMapper` (gesture → action ตาม config, ยังไม่ต้องมี app profile) _ActionMapper มีแค่ pinch → leftButton; gesture อื่นรอ Phase 5_
 
 ### Actions
 - [ ] **P2-14** — `MouseController`: move, left/right/double click, drag, scroll (vertical + horizontal)
