@@ -14,9 +14,10 @@ private final class FakeTracker: HandTrackingProvider, @unchecked Sendable {
 }
 
 private final class FakeMouse: MouseControlling {
-    enum Call: Equatable { case move(CGPoint), press, release }
+    enum Call: Equatable { case move(CGPoint), press, release, pressRight, releaseRight }
     private(set) var calls: [Call] = []
     private var down = false
+    private var rightDown = false
     func move(to point: CGPoint) { calls.append(.move(point)) }
     func pressLeft() {
         down = true
@@ -27,20 +28,29 @@ private final class FakeMouse: MouseControlling {
         down = false
         calls.append(.release)
     }
+    func pressRight() {
+        rightDown = true
+        calls.append(.pressRight)
+    }
+    func releaseRight() {
+        guard rightDown else { return }
+        rightDown = false
+        calls.append(.releaseRight)
+    }
 }
 
 private let screen = CGRect(x: 0, y: 0, width: 1000, height: 800)
 
-private func frame(_ t: Double, ratio: Double = 1.0) -> HandFrame {
-    HandFrame(
-        timestamp: t,
-        hand: HandLandmarks(joints: [
-            .wrist: Landmark(x: 0.5, y: 0.2),
-            .middleMCP: Landmark(x: 0.5, y: 0.4),
-            .thumbTip: Landmark(x: 0.5, y: 0.5),
-            .indexTip: Landmark(x: 0.5 + ratio * 0.2, y: 0.5),
-            .indexMCP: Landmark(x: 0.5, y: 0.5),
-        ]))
+private func frame(_ t: Double, ratio: Double = 1.0, middle: Double? = nil) -> HandFrame {
+    var joints: [Joint: Landmark] = [
+        .wrist: Landmark(x: 0.5, y: 0.2),
+        .middleMCP: Landmark(x: 0.5, y: 0.4),
+        .thumbTip: Landmark(x: 0.5, y: 0.5),
+        .indexTip: Landmark(x: 0.5 + ratio * 0.2, y: 0.5),
+        .indexMCP: Landmark(x: 0.5, y: 0.5),
+    ]
+    if let middle { joints[.middleTip] = Landmark(x: 0.5 + middle * 0.2, y: 0.5) }
+    return HandFrame(timestamp: t, hand: HandLandmarks(joints: joints))
 }
 
 @Suite struct GestureSessionTests {
@@ -89,6 +99,25 @@ private func frame(_ t: Double, ratio: Double = 1.0) -> HandFrame {
         #expect(mouse.calls.last == .release)
         #expect(tracker.stopped)
         #expect(tracker.onFrame == nil)
+    }
+
+    @Test func middleFingerPinchPressesAndReleasesTheRightButton() throws {
+        let (session, tracker, mouse) = make()
+        try session.start()
+        for i in 0..<8 { tracker.onFrame?(frame(Double(i) / 30, ratio: 0.9, middle: i < 5 ? 0.9 : 0.2)) }
+        #expect(mouse.calls.contains(.pressRight))
+        #expect(!mouse.calls.contains(.press))
+        tracker.onFrame?(frame(9.0 / 30, ratio: 0.9, middle: 0.9))
+        #expect(mouse.calls.contains(.releaseRight))
+        #expect(!mouse.calls.contains(.release))
+    }
+
+    @Test func stopReleasesAHeldRightButton() throws {
+        let (session, tracker, mouse) = make()
+        try session.start()
+        for i in 0..<8 { tracker.onFrame?(frame(Double(i) / 30, ratio: 0.9, middle: i < 5 ? 0.9 : 0.2)) }
+        session.stop()
+        #expect(mouse.calls.last == .releaseRight)
     }
 
     @Test func stopWithoutPinchDoesNotRelease() throws {

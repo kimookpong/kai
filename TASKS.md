@@ -86,12 +86,12 @@
 - [x] **P2-10** — `GestureStateMachine` (IDLE → HAND_DETECTED → ENGAGED → TRACKING → PINCH → DRAG → RELEASE) _GestureEngine: idle / tracking / pinching + clutch (engaged flag); ท่า drag ยังรอ_
   - Done when: state transitions มี unit test ครบ รวมกรณีมือหายกลางคัน
 - [ ] **P2-11** — Clutch: engage / disengage gesture (เช่น โชว์ฝ่ามือค้าง 0.5s) + hotkey
-- [ ] **P2-12** — Recognizers: pinch, pinch-hold, two-finger pinch, scroll pose _PinchDetector เสร็จ (hysteresis, debounce, speed gate, re-arm); two-finger / scroll pose / pinch-hold รอ_
+- [ ] **P2-12** — Recognizers: pinch, pinch-hold, two-finger pinch, scroll pose _PinchDetector เสร็จ (hysteresis, debounce, speed gate, re-arm); pinch นิ้วชี้ + นิ้วกลางเสร็จ (นิ้วที่ใกล้โป้งกว่าชนะ, ค้างอยู่เมินอีกนิ้ว); scroll pose รอ_
   - แต่ละตัวมี threshold, confidence, min/max duration, cooldown
 - [x] **P2-13** — `GestureEvent` + `ActionMapper` (gesture → action ตาม config, ยังไม่ต้องมี app profile) _ActionMapper มีแค่ pinch → leftButton; gesture อื่นรอ Phase 5_
 
 ### Actions
-- [ ] **P2-14** — `MouseController`: move, left/right/double click, drag, scroll (vertical + horizontal) _ทำแล้ว: move, ปุ่มซ้าย (กด/ปล่อย → ลากได้), double click (นับคลิกด้วย ClickCounter; ยังไม่ทดสอบกับแอปจริง); ยังไม่มี right click, scroll_
+- [ ] **P2-14** — `MouseController`: move, left/right/double click, drag, scroll (vertical + horizontal) _ทำแล้ว: move, ปุ่มซ้าย (กด/ปล่อย → ลากได้), double click (นับคลิกด้วย ClickCounter; ยังไม่ทดสอบกับแอปจริง); right click = จีบโป้งกับนิ้วกลาง (ยังไม่ทดสอบกับแอปจริง); ยังไม่มี scroll_
 - [ ] **P2-15** — ป้องกัน feedback loop: ไม่ให้ cursor event ที่ KAI สร้างถูกตีความซ้ำ
 
 ### UX

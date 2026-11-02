@@ -6,6 +6,8 @@ public protocol MouseControlling: AnyObject {
     func move(to point: CGPoint)
     func pressLeft()
     func releaseLeft()
+    func pressRight()
+    func releaseRight()
 }
 
 /// Posts real mouse events through CGEvent. Requires the Accessibility permission to take effect.
@@ -13,6 +15,7 @@ public protocol MouseControlling: AnyObject {
 public final class MouseController: MouseControlling, @unchecked Sendable {
     public private(set) var position: CGPoint
     public private(set) var isLeftDown = false
+    public private(set) var isRightDown = false
     private var clicks = ClickCounter()
     private var clickCount = 1
 
@@ -20,7 +23,13 @@ public final class MouseController: MouseControlling, @unchecked Sendable {
 
     public func move(to point: CGPoint) {
         position = point
-        post(isLeftDown ? .leftMouseDragged : .mouseMoved)
+        if isLeftDown {
+            post(.leftMouseDragged)
+        } else if isRightDown {
+            post(.rightMouseDragged)
+        } else {
+            post(.mouseMoved)
+        }
     }
 
     public func pressLeft() {
@@ -37,14 +46,31 @@ public final class MouseController: MouseControlling, @unchecked Sendable {
         post(.leftMouseUp)
     }
 
+    public func pressRight() {
+        guard !isRightDown else { return }
+        isRightDown = true
+        post(.rightMouseDown)
+    }
+
+    public func releaseRight() {
+        guard isRightDown else { return }
+        isRightDown = false
+        post(.rightMouseUp)
+    }
+
     private func post(_ type: CGEventType) {
         guard
             let event = CGEvent(
-                mouseEventSource: nil, mouseType: type, mouseCursorPosition: position, mouseButton: .left)
+                mouseEventSource: nil, mouseType: type, mouseCursorPosition: position,
+                mouseButton: isRightEvent(type) ? .right : .left)
         else { return }
         if type == .leftMouseDown || type == .leftMouseUp {
             event.setIntegerValueField(.mouseEventClickState, value: Int64(clickCount))
         }
         event.post(tap: .cghidEventTap)
+    }
+
+    private func isRightEvent(_ type: CGEventType) -> Bool {
+        type == .rightMouseDown || type == .rightMouseUp || type == .rightMouseDragged
     }
 }

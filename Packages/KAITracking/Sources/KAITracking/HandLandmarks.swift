@@ -1,7 +1,7 @@
 import CoreGraphics
 
 public enum Joint: String, Sendable, CaseIterable {
-    case wrist, thumbTip, indexMCP, indexTip, middleMCP, ringMCP, littleMCP
+    case wrist, thumbTip, indexMCP, indexTip, middleMCP, middleTip, ringMCP, littleMCP
 }
 
 /// A joint position in normalized camera coordinates. Providers deliver these already mirrored
@@ -48,13 +48,18 @@ public struct HandLandmarks: Sendable, Equatable {
 
     /// Thumb-to-index distance divided by hand size (wrist to middle knuckle), so it is independent of
     /// how far the hand is from the camera. Nil when a joint is missing or the hand is too small to trust.
-    public var pinchRatio: Double? {
+    public var pinchRatio: Double? { pinchRatio(to: .indexTip) }
+
+    /// Same as `pinchRatio` but thumb to middle fingertip.
+    public var middlePinchRatio: Double? { pinchRatio(to: .middleTip) }
+
+    private func pinchRatio(to finger: Joint) -> Double? {
         guard let wrist = joints[.wrist], let middle = joints[.middleMCP],
-            let thumb = joints[.thumbTip], let index = joints[.indexTip]
+            let thumb = joints[.thumbTip], let tip = joints[finger]
         else { return nil }
         let handSize = hypot(wrist.x - middle.x, wrist.y - middle.y)
         guard handSize > 0.01 else { return nil }
-        return hypot(thumb.x - index.x, thumb.y - index.y) / handSize
+        return hypot(thumb.x - tip.x, thumb.y - tip.y) / handSize
     }
 
     private func cgPoint(_ joint: Joint) -> CGPoint? {

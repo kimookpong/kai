@@ -75,7 +75,7 @@ public final class AppleVisionTracker: NSObject, HandTrackingProvider, AVCapture
 
     private static let joints: [(Joint, VNHumanHandPoseObservation.JointName, isTip: Bool)] = [
         (.wrist, .wrist, false), (.thumbTip, .thumbTip, true), (.indexTip, .indexTip, true),
-        (.indexMCP, .indexMCP, false), (.middleMCP, .middleMCP, false),
+        (.indexMCP, .indexMCP, false), (.middleMCP, .middleMCP, false), (.middleTip, .middleTip, true),
         (.ringMCP, .ringMCP, false), (.littleMCP, .littleMCP, false),
     ]
 

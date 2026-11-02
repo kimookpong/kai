@@ -5,17 +5,28 @@ import Testing
 @testable import KAIGesture
 
 /// A hand whose index knuckle is at `at`, with the pinch ratio set directly (hand size 0.2).
-private func frame(_ t: Double, at: CGPoint = CGPoint(x: 0.5, y: 0.5), ratio: Double = 1.0) -> HandFrame {
+private func frame(
+    _ t: Double, at: CGPoint = CGPoint(x: 0.5, y: 0.5), ratio: Double = 1.0, middle: Double? = nil
+) -> HandFrame {
     let size = 0.2
-    return HandFrame(
-        timestamp: t,
-        hand: HandLandmarks(joints: [
-            .wrist: Landmark(x: 0.5, y: 0.2),
-            .middleMCP: Landmark(x: 0.5, y: 0.2 + size),
-            .thumbTip: Landmark(x: 0.5, y: 0.5),
-            .indexTip: Landmark(x: 0.5 + ratio * size, y: 0.5),
-            .indexMCP: Landmark(x: at.x, y: at.y),
-        ]))
+    var joints: [Joint: Landmark] = [
+        .wrist: Landmark(x: 0.5, y: 0.2),
+        .middleMCP: Landmark(x: 0.5, y: 0.2 + size),
+        .thumbTip: Landmark(x: 0.5, y: 0.5),
+        .indexTip: Landmark(x: 0.5 + ratio * size, y: 0.5),
+        .indexMCP: Landmark(x: at.x, y: at.y),
+    ]
+    if let middle { joints[.middleTip] = Landmark(x: 0.5 + middle * size, y: 0.5) }
+    return HandFrame(timestamp: t, hand: HandLandmarks(joints: joints))
+}
+
+private func isPointerMove(_ e: GestureEvent) -> Bool {
+    if case .pointerMoved = e { true } else { false }
+}
+
+private func began(_ events: [GestureEvent]) -> PinchFinger? {
+    for case .pinchBegan(_, let finger) in events { return finger }
+    return nil
 }
 
 private func noHand(_ t: Double) -> HandFrame { HandFrame(timestamp: t, hand: nil) }
@@ -127,12 +138,12 @@ private func noHand(_ t: Double) -> HandFrame { HandFrame(timestamp: t, hand: ni
         for i in 0..<5 { all.append(engine.process(frame(Double(i) / 30), engaged: true)) }
         all.append(engine.process(frame(5.0 / 30, ratio: 0.2), engaged: true))
         let began = engine.process(frame(6.0 / 30, ratio: 0.2), engaged: true)
-        #expect(began.contains(.pinchBegan(at: CGPoint(x: 0.5, y: 0.5))))
-        #expect(!began.contains { if case .pointerMoved = $0 { true } else { false } })  // frozen
+        #expect(began.contains(.pinchBegan(at: CGPoint(x: 0.5, y: 0.5), finger: .index)))
+        #expect(!began.contains(where: isPointerMove))  // frozen
         #expect(engine.state == .pinching)
 
         let ended = engine.process(frame(7.0 / 30, ratio: 0.9), engaged: true)
-        #expect(ended.contains(.pinchEnded))
+        #expect(ended.contains(.pinchEnded(finger: .index)))
         #expect(engine.state == .tracking)
     }
 
@@ -148,7 +159,7 @@ private func noHand(_ t: Double) -> HandFrame { HandFrame(timestamp: t, hand: ni
         t += 1.0 / 30
         let events = engine.process(frame(t, at: CGPoint(x: 0.5, y: 0.49), ratio: 0.2), engaged: true)
         guard
-            case .pinchBegan(let at)? = events.first(where: {
+            case .pinchBegan(let at, _)? = events.first(where: {
                 if case .pinchBegan = $0 { true } else { false }
             })
         else {
@@ -162,14 +173,14 @@ private func noHand(_ t: Double) -> HandFrame { HandFrame(timestamp: t, hand: ni
         var engine = GestureEngine()
         for i in 0..<8 { _ = engine.process(frame(Double(i) / 30, ratio: i < 5 ? 1.0 : 0.2), engaged: true) }
         #expect(engine.state == .pinching)
-        #expect(engine.process(frame(9.0 / 30, ratio: 0.2), engaged: false) == [.pinchEnded])
+        #expect(engine.process(frame(9.0 / 30, ratio: 0.2), engaged: false) == [.pinchEnded(finger: .index)])
         #expect(engine.state == .idle)
     }
 
     @Test func lostHandEmitsEndedThenHandLost() {
         var engine = GestureEngine()
         for i in 0..<8 { _ = engine.process(frame(Double(i) / 30, ratio: i < 5 ? 1.0 : 0.2), engaged: true) }
-        #expect(engine.process(noHand(9.0 / 30), engaged: true) == [.pinchEnded, .handLost])
+        #expect(engine.process(noHand(9.0 / 30), engaged: true) == [.pinchEnded(finger: .index), .handLost])
         #expect(engine.state == .idle)
     }
 
@@ -187,9 +198,84 @@ private func noHand(_ t: Double) -> HandFrame { HandFrame(timestamp: t, hand: ni
     }
 }
 
+@Suite struct MiddleFingerTests {
+    /// Runs frames 0..<n with the given ratios and returns all events.
+    private func run(
+        _ engine: inout GestureEngine, from start: Int = 0, count: Int, index: Double, middle: Double?
+    ) -> [GestureEvent] {
+        var all: [GestureEvent] = []
+        for i in start..<(start + count) {
+            all += engine.process(frame(Double(i) / 30, ratio: index, middle: middle), engaged: true)
+        }
+        return all
+    }
+
+    @Test func middleFingerPinchBeginsAMiddlePinch() {
+        var engine = GestureEngine()
+        let events = run(&engine, count: 6, index: 0.9, middle: 0.2)
+        #expect(began(events) == .middle)
+    }
+
+    @Test func indexPinchWithMiddleFingerExtendedStaysAnIndexPinch() {
+        var engine = GestureEngine()
+        let events = run(&engine, count: 6, index: 0.2, middle: 0.9)
+        #expect(began(events) == .index)
+    }
+
+    @Test func closerFingerWinsWhenBothAreNearTheThumb() {
+        var engine = GestureEngine()
+        let events = run(&engine, count: 6, index: 0.25, middle: 0.15)
+        #expect(began(events) == .middle)
+    }
+
+    @Test func tieGoesToTheIndexFinger() {
+        var engine = GestureEngine()
+        let events = run(&engine, count: 6, index: 0.2, middle: 0.2)
+        #expect(began(events) == .index)
+    }
+
+    @Test func heldIndexPinchIgnoresMiddleFingerUntilReleased() {
+        var engine = GestureEngine()
+        let start = run(&engine, count: 6, index: 0.2, middle: 0.9)
+        #expect(began(start) == .index)
+
+        // The middle finger now curls in even closer than the index, while the index pinch is still held.
+        let hold = run(&engine, from: 6, count: 6, index: 0.2, middle: 0.1)
+        #expect(began(hold) == nil)
+        #expect(!hold.contains(.pinchEnded(finger: .index)))
+        #expect(engine.state == .pinching)
+
+        let release = run(&engine, from: 12, count: 1, index: 0.9, middle: 0.9)
+        #expect(release.contains(.pinchEnded(finger: .index)))
+    }
+
+    @Test func middlePinchEndsWithItsOwnFingerEvent() {
+        var engine = GestureEngine()
+        _ = run(&engine, count: 6, index: 0.9, middle: 0.2)
+        let release = run(&engine, from: 6, count: 1, index: 0.9, middle: 0.9)
+        #expect(release.contains(.pinchEnded(finger: .middle)))
+    }
+
+    @Test func lostHandReleasesAMiddlePinch() {
+        var engine = GestureEngine()
+        _ = run(&engine, count: 6, index: 0.9, middle: 0.2)
+        #expect(engine.process(noHand(7.0 / 30), engaged: true) == [.pinchEnded(finger: .middle), .handLost])
+    }
+
+    @Test func handWithoutMiddleTipStillSupportsIndexPinch() {
+        var engine = GestureEngine()
+        let events = run(&engine, count: 6, index: 0.2, middle: nil)
+        #expect(began(events) == .index)
+    }
+}
+
 @Suite struct ActionMapperTests {
     @Test func defaultsPinchToLeftButton() {
         #expect(ActionMapper().action(for: "pinch") == .leftButton)
+    }
+
+    @Test func defaultsMiddlePinchToRightButton() {
+        #expect(ActionMapper().action(for: PinchFinger.middle.gestureName) == .rightButton)
     }
 
     @Test func unmappedGestureDoesNothing() {

@@ -9,7 +9,10 @@ public struct ActionMapper: Sendable, Equatable {
 
     public init(mapping: [String: GestureAction] = ActionMapper.defaultMapping) { self.mapping = mapping }
 
-    public static let defaultMapping: [String: GestureAction] = ["pinch": .leftButton]
+    public static let defaultMapping: [String: GestureAction] = [
+        PinchFinger.index.gestureName: .leftButton,
+        PinchFinger.middle.gestureName: .rightButton,
+    ]
 
     public func action(for gesture: String) -> GestureAction {
         mapping[gesture] ?? .none

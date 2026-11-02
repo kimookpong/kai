@@ -15,6 +15,8 @@ public final class GestureSession: @unchecked Sendable {
     private let actions: ActionMapper
     private let gestureConfig: GestureConfig
     private var engine: GestureEngine
+    /// The action each finger pressed, so the matching button is the one released.
+    private var held: [PinchFinger: GestureAction] = [:]
 
     public init(
         config: GestureConfig,
@@ -42,6 +44,7 @@ public final class GestureSession: @unchecked Sendable {
         tracker.onFrame = nil
         tracker.stop()
         mouse.releaseLeft()
+        mouse.releaseRight()
     }
 
     public func handle(_ frame: HandFrame) {
@@ -49,11 +52,21 @@ public final class GestureSession: @unchecked Sendable {
             switch event {
             case .pointerMoved(let p):
                 mouse.move(to: pointer.screenPoint(forNormalized: p))
-            case .pinchBegan(let p):
+            case .pinchBegan(let p, let finger):
                 mouse.move(to: pointer.screenPoint(forNormalized: p))
-                if actions.action(for: "pinch") == .leftButton { mouse.pressLeft() }
-            case .pinchEnded:
-                mouse.releaseLeft()
+                let action = actions.action(for: finger.gestureName)
+                held[finger] = action
+                switch action {
+                case .leftButton: mouse.pressLeft()
+                case .rightButton: mouse.pressRight()
+                case .none: break
+                }
+            case .pinchEnded(let finger):
+                switch held.removeValue(forKey: finger) {
+                case .leftButton: mouse.releaseLeft()
+                case .rightButton: mouse.releaseRight()
+                case .some(.none), nil: break
+                }
             case .handLost:
                 break
             }

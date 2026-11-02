@@ -16,6 +16,17 @@ private func hand(thumb: (Double, Double), index: (Double, Double)) -> HandLandm
 }
 
 @Suite struct HandLandmarksTests {
+    @Test func middlePinchRatioMeasuresThumbToMiddleTip() throws {
+        var h = hand(thumb: (0.5, 0.5), index: (0.9, 0.5))
+        h.joints[.middleTip] = Landmark(x: 0.54, y: 0.5)  // 0.04 apart, hand size 0.2
+        let ratio = try #require(h.middlePinchRatio)
+        #expect(abs(ratio - 0.2) < 1e-9)
+    }
+
+    @Test func middlePinchRatioIsNilWithoutMiddleTip() {
+        #expect(hand(thumb: (0.5, 0.5), index: (0.56, 0.5)).middlePinchRatio == nil)
+    }
+
     @Test func pinchRatioIsRelativeToHandSize() throws {
         let h = hand(thumb: (0.5, 0.5), index: (0.56, 0.5))  // 0.06 apart, hand size 0.2
         #expect(abs(try #require(h.pinchRatio) - 0.3) < 1e-9)
