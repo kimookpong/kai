@@ -59,8 +59,11 @@ final class AppState {
         guard on != isEngaged else { return }
         if on {
             refreshPermissions()
+            let ax = permissions[.accessibility]?.rawValue ?? "?"
+            let cam = permissions[.camera]?.rawValue ?? "?"
+            log.info("Engage requested: accessibility=\(ax, privacy: .public) camera=\(cam, privacy: .public)")
             guard permissions[.accessibility] == .granted else {
-                engagementError = "Accessibility permission is needed to control the pointer."
+                fail("Accessibility permission is needed to control the pointer.")
                 PermissionRequester.request(.accessibility) { [weak self] in self?.refreshPermissions() }
                 return
             }
@@ -74,19 +77,19 @@ final class AppState {
                     if permissions[.camera] == .granted {
                         setEngaged(true)
                     } else {
-                        engagementError = "Camera access was not granted."
+                        fail("Camera access was not granted.")
                     }
                 }
                 return
             default:
-                engagementError = "Camera permission is needed to track your hand."
+                fail("Camera permission is needed to track your hand.")
                 PermissionRequester.openSettings(.camera)
                 return
             }
             let newSession = GestureSession(config: gestureConfig())
             do { try newSession.start() } catch {
                 log.error("Could not start gesture session: \(error.localizedDescription, privacy: .public)")
-                engagementError = "Could not start the camera."
+                fail("Could not start the camera.")
                 return
             }
             session = newSession
@@ -95,8 +98,16 @@ final class AppState {
             session = nil
         }
         isEngaged = on
+        log.info("Engaged: \(on, privacy: .public)")
         let events = events
         Task { await events.publish(.engagementChanged(isEngaged: on)) }
+    }
+
+    /// Reports why engaging failed: logged, shown in the menu, flagged by the menu bar icon, and audible.
+    private func fail(_ message: String) {
+        log.error("Engage failed: \(message, privacy: .public)")
+        engagementError = message
+        NSSound.beep()
     }
 
     private func gestureConfig() -> GestureConfig {
@@ -138,6 +149,11 @@ final class AppState {
             log.error("Launch at login failed: \(error.localizedDescription, privacy: .public)")
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
+    }
+
+    var menuBarSymbol: String {
+        if engagementError != nil { return "exclamationmark.triangle" }
+        return isEngaged ? "hand.point.up.left.fill" : "hand.point.up.left"
     }
 
     /// Number of permissions the core features need that are not yet granted.
