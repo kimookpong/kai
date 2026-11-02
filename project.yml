@@ -15,6 +15,12 @@ settings:
 packages:
   KAICore:
     path: Packages/KAICore
+  KAITracking:
+    path: Packages/KAITracking
+  KAIGesture:
+    path: Packages/KAIGesture
+  KAIActions:
+    path: Packages/KAIActions
 targets:
   KAI:
     type: application
@@ -22,6 +28,9 @@ targets:
     sources: [KAI]
     dependencies:
       - package: KAICore
+      - package: KAITracking
+      - package: KAIGesture
+      - package: KAIActions
     entitlements:
       path: KAI/KAI.entitlements
       properties:

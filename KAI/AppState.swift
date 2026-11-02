@@ -1,6 +1,8 @@
 import AppKit
 import Carbon.HIToolbox
 import KAICore
+import KAIGesture
+import KAITracking
 import Observation
 import ServiceManagement
 
@@ -9,7 +11,10 @@ import ServiceManagement
 final class AppState {
     private(set) var permissions: [Permission: PermissionStatus] = [:]
     private(set) var config: KAIConfig
-    var isEngaged = false
+    private(set) var isEngaged = false
+    /// Why engagement failed, shown in the menu. Cleared on the next attempt.
+    private(set) var engagementError: String?
+    @ObservationIgnored private var session: GestureSession?
     private(set) var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     let events = EventBus()
@@ -17,6 +22,7 @@ final class AppState {
     private let store = ConfigStore.standard()
     private let log = KAILog.logger(.app)
     @ObservationIgnored private var activationObserver: NSObjectProtocol?
+    @ObservationIgnored private var terminationObserver: NSObjectProtocol?
     @ObservationIgnored private let hotkey = HotkeyManager()
     private(set) var hotkeyRegistered = false
 
@@ -33,6 +39,11 @@ final class AppState {
             [weak self] in
             self?.toggleEngaged()
         }
+        terminationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.setEngaged(false) }
+        }
         activationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -40,11 +51,64 @@ final class AppState {
         }
     }
 
-    func toggleEngaged() {
-        isEngaged.toggle()
-        let engaged = isEngaged
+    func toggleEngaged() { setEngaged(!isEngaged) }
+
+    /// Engaging starts the camera and takes control of the pointer; disengaging stops the camera.
+    func setEngaged(_ on: Bool) {
+        engagementError = nil
+        guard on != isEngaged else { return }
+        if on {
+            refreshPermissions()
+            guard permissions[.accessibility] == .granted else {
+                engagementError = "Accessibility permission is needed to control the pointer."
+                PermissionRequester.request(.accessibility) { [weak self] in self?.refreshPermissions() }
+                return
+            }
+            switch permissions[.camera] {
+            case .granted:
+                break
+            case .notDetermined:
+                PermissionRequester.request(.camera) { [weak self] in
+                    guard let self else { return }
+                    refreshPermissions()
+                    if permissions[.camera] == .granted {
+                        setEngaged(true)
+                    } else {
+                        engagementError = "Camera access was not granted."
+                    }
+                }
+                return
+            default:
+                engagementError = "Camera permission is needed to track your hand."
+                PermissionRequester.openSettings(.camera)
+                return
+            }
+            let newSession = GestureSession(config: gestureConfig())
+            do { try newSession.start() } catch {
+                log.error("Could not start gesture session: \(error.localizedDescription, privacy: .public)")
+                engagementError = "Could not start the camera."
+                return
+            }
+            session = newSession
+        } else {
+            session?.stop()
+            session = nil
+        }
+        isEngaged = on
         let events = events
-        Task { await events.publish(.engagementChanged(isEngaged: engaged)) }
+        Task { await events.publish(.engagementChanged(isEngaged: on)) }
+    }
+
+    private func gestureConfig() -> GestureConfig {
+        var g = GestureConfig()
+        let c = config.gesture
+        g.anchor = AnchorKind(rawValue: c.anchor) ?? .mcp
+        g.filterMinCutoff = c.filterMinCutoff
+        g.filterBeta = c.filterBeta
+        g.pinchDown = c.pinchDown
+        g.pinchUp = c.pinchUp
+        g.freezeSeconds = c.freezeMs / 1000
+        return g
     }
 
     func refreshPermissions() {

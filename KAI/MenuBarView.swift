@@ -11,6 +11,10 @@ struct MenuBarView: View {
             Text("Shortcut ⌃⌥K is taken by another app").font(.caption)
         }
 
+        if let error = state.engagementError {
+            Text(error).font(.caption)
+        }
+
         if state.missingRequiredPermissions > 0 {
             Text("\(state.missingRequiredPermissions) permission(s) needed")
         }

@@ -69,12 +69,12 @@
 ## Phase 2 — Gesture Core
 
 ### Tracking pipeline
-- [ ] **P2-01** — `CameraManager` (เลือกกล้อง, fps, รันบน dedicated queue)
+- [x] **P2-01** — `CameraManager` (เลือกกล้อง, fps, รันบน dedicated queue) _รวมอยู่ใน AppleVisionTracker (เลือกกล้อง/fps ยังไม่มี ใช้กล้องเริ่มต้น VGA)_
   - deps: P1-09
-- [ ] **P2-02** — `HandTrackingProvider` protocol + implementation ที่เลือกจาก P0 _protocol `HandTrackingProvider` อยู่ใน KAITracking; implementation ของ Apple Vision ยังอยู่ใน spike/ รอย้าย_
+- [x] **P2-02** — `HandTrackingProvider` protocol + implementation ที่เลือกจาก P0 _protocol `HandTrackingProvider` อยู่ใน KAITracking; implementation ของ Apple Vision ยังอยู่ใน spike/ รอย้าย_ _AppleVisionTracker ใน KAITracking; ยังไม่ได้วัดผลหลังย้ายจาก spike_
 - [x] **P2-03** — `HandLandmarks` model (normalized coords, confidence, handedness) _ยังไม่มี handedness (ไม่ได้ใช้ใน Phase 2)_
-- [ ] **P2-04** — Idle mode: ลด fps เมื่อไม่เห็นมือ N วินาที, ปิดกล้องเมื่อ disengage นาน
-- [ ] **P2-05** — Camera-active indicator ใน menu bar (นอกเหนือจากไฟเขียวของระบบ)
+- [ ] **P2-04** — Idle mode: ลด fps เมื่อไม่เห็นมือ N วินาที, ปิดกล้องเมื่อ disengage นาน _ปิดกล้องเมื่อ disengage แล้ว; ยังไม่มีการลด fps ตอนไม่เห็นมือ_
+- [ ] **P2-05** — Camera-active indicator ใน menu bar (นอกเหนือจากไฟเขียวของระบบ) _ไอคอน menu bar เปลี่ยนเมื่อ engaged; ยังไม่มีตัวบอกกล้องแยก_
 
 ### Signal processing
 - [x] **P2-06** — One Euro Filter (unit tests ด้วย synthetic signal)
@@ -91,7 +91,7 @@
 - [x] **P2-13** — `GestureEvent` + `ActionMapper` (gesture → action ตาม config, ยังไม่ต้องมี app profile) _ActionMapper มีแค่ pinch → leftButton; gesture อื่นรอ Phase 5_
 
 ### Actions
-- [ ] **P2-14** — `MouseController`: move, left/right/double click, drag, scroll (vertical + horizontal)
+- [ ] **P2-14** — `MouseController`: move, left/right/double click, drag, scroll (vertical + horizontal) _ทำแล้ว: move, ปุ่มซ้าย (กด/ปล่อย → ลากได้); ยังไม่มี right click, double click, scroll_
 - [ ] **P2-15** — ป้องกัน feedback loop: ไม่ให้ cursor event ที่ KAI สร้างถูกตีความซ้ำ
 
 ### UX
